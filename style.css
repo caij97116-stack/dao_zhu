@@ -1,0 +1,1482 @@
+/* 岛主历险记 — 卡片与设置面板样式
+ * 命名空间统一以 .dz- 开头，避免与其他扩展 CSS 冲突。
+ * 主题色通过内联 style="--dz-accent:..." 传入，这里只做消费。 */
+
+.dz-card {
+  border: 1px solid var(--dz-accent, #3b82f6);
+  border-left: 4px solid var(--dz-accent, #3b82f6);
+  border-radius: 8px;
+  margin: 8px 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.95em;
+}
+
+.dz-title {
+  background: var(--dz-accent, #3b82f6);
+  color: #fff;
+  padding: 4px 10px;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.dz-body {
+  padding: 6px 10px;
+}
+
+.dz-row {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+  line-height: 1.5;
+}
+
+.dz-k {
+  flex: 0 0 6em;
+  color: var(--dz-accent, #3b82f6);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.dz-v {
+  flex: 1 1 auto;
+  word-break: break-all;
+}
+
+.dz-notes {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--dz-accent, #3b82f6);
+  white-space: pre-wrap;
+  color: #cfcfcf;
+}
+
+.dz-html {
+  margin-top: 6px;
+}
+
+.dz-iframe {
+  width: 100%;
+  min-height: 240px;
+  border: 0;
+  border-radius: 6px;
+  margin-top: 6px;
+  background: #fff;
+}
+
+/* 单卡渲染失败降级：以原始文本（转义）呈现，不显示半成品 */
+.dz-error {
+  white-space: pre-wrap;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: #ef4444;
+}
+.dz-error .dz-title {
+  background: #ef4444;
+}
+
+/* ===== 设置面板（M6）===== */
+.dz-settings-block {
+  border-top: 1px solid var(--dz-accent, #3b82f6);
+  margin-top: 10px;
+  padding-top: 8px;
+}
+/* 可折叠抽屉标题栏（对齐 SillyTavern 原生 inline-drawer 观感：点击整行展开/折叠）*/
+.dz-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  padding: 6px 4px;
+  border-radius: 6px;
+  font-size: 1.05em;
+  color: var(--dz-accent, #3b82f6);
+  transition: background-color 0.15s ease;
+}
+.dz-settings-header:hover {
+  background: rgba(127, 127, 127, 0.14);
+}
+.dz-settings-header:focus-visible {
+  outline: 2px solid var(--dz-accent, #3b82f6);
+  outline-offset: 2px;
+}
+.dz-settings-chevron {
+  transition: transform 0.2s ease;
+  opacity: 0.8;
+  font-size: 0.9em;
+}
+.dz-settings-content {
+  padding: 4px 4px 10px;
+}
+.dz-input {
+  width: 100%;
+  margin: 3px 0 0;
+  padding: 4px 7px;
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  border-radius: 5px;
+  background: var(--SmartThemeBodyColor, #fff);
+  color: var(--SmartThemeBodyTextColor, #222);
+  box-sizing: border-box;
+}
+.dz-settings-sub {
+  margin: 12px 0 4px;
+  font-size: 0.95em;
+}
+.dz-row-set {
+  display: block;
+  margin: 4px 0;
+  line-height: 1.5;
+}
+.dz-hint {
+  font-size: 0.85em;
+  color: #b9b9b9;
+  margin: 4px 0 6px;
+}
+.dz-instruction {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: monospace;
+  font-size: 0.82em;
+  line-height: 1.45;
+  background: rgba(0, 0, 0, 0.25);
+  color: #e6e6e6;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px;
+  resize: vertical;
+}
+.dz-btn {
+  margin: 8px 8px 0 0;
+  padding: 5px 12px;
+  border: 1px solid var(--dz-accent, #3b82f6);
+  background: var(--dz-accent, #3b82f6);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+.dz-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ===== 岛民名册悬浮窗（M9 骨架 + 视觉美化）===== */
+.dz-nav {
+  position: fixed;
+  /* M15-A：层级降到“高于一般浮层、低于酒馆原生模态/图片查看器”，
+     避免盖住设置面板、抽屉、ST-Chat-Jumper、柏宝箱弹窗等第三方浮层 */
+  z-index: 9000;
+  width: 360px;
+  max-width: calc(100vw - 16px);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--SmartThemeBodyColor, #fff);
+  color: var(--SmartThemeBodyTextColor, #222);
+  border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.35));
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  font-size: 14px;
+}
+.dz-nav[hidden] {
+  display: none;
+}
+
+/* 标题栏：主题色底 + 轻微高光，可拖拽 */
+.dz-nav-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: var(--dz-accent, #3b82f6);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+  color: #fff;
+  cursor: grab;
+  user-select: none;
+  flex-wrap: nowrap;
+}
+.dz-nav-header:active {
+  cursor: grabbing;
+}
+.dz-nav-title {
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* 标签页：分段控件（segmented control），激活项为白底胶囊 */
+.dz-nav-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1 1 auto;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
+  padding: 2px;
+  overflow: hidden;
+}
+.dz-nav-tab {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85em;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.dz-nav-tab:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.dz-nav-tab.dz-nav-active {
+  background: #fff;
+  color: var(--dz-accent, #3b82f6);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+}
+
+.dz-nav-close {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 1.05em;
+  line-height: 1;
+  cursor: pointer;
+  padding: 3px 7px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+.dz-nav-close:hover {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+/* 内容区：细滚动条，贴合主题 */
+.dz-nav-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px;
+  min-height: 120px;
+  scrollbar-width: thin;
+}
+.dz-nav-body::-webkit-scrollbar {
+  width: 8px;
+}
+.dz-nav-body::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.42);
+  border-radius: 4px;
+}
+.dz-nav-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.62);
+}
+.dz-nav-pane[hidden] {
+  display: none;
+}
+
+/* 开关按钮：注入聊天输入框【原生按钮栏】（#leftSendForm 优先，与 ☰ / 🪄 并列）
+   刻意做成“原生观感”——默认沿用主题色描边，仅在激活(打开面板)时才点亮主题色，
+   避免在原生的 ☰ / 🪄 旁边出现一块突兀的实心蓝。 */
+.dz-nav-toggle {
+  border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.45));
+  background: transparent;
+  color: var(--SmartThemeBodyTextColor, inherit);
+  border-radius: 6px;
+  padding: 4px 9px;
+  cursor: pointer;
+  font-size: 0.9em;
+  line-height: 1.2;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.dz-nav-toggle:hover {
+  border-color: var(--dz-accent, #3b82f6);
+  color: var(--dz-accent, #3b82f6);
+}
+.dz-nav-toggle.dz-nav-on {
+  background: var(--dz-accent, #3b82f6);
+  border-color: var(--dz-accent, #3b82f6);
+  color: #fff;
+}
+/* 降级：原生按钮栏都拿不到时，贴右下角的迷你浮动钮 */
+.dz-nav-toggle.dz-nav-toggle-float {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 9001;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dz-accent, #3b82f6);
+  border-color: var(--dz-accent, #3b82f6);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* 移动端：面板收敛宽度，避免顶到边缘 */
+@media (max-width: 480px) {
+  .dz-nav {
+    width: calc(100vw - 16px);
+    max-height: 60vh;
+  }
+  .dz-nav-header {
+    flex-wrap: wrap;
+  }
+}
+
+/* 移动端：窄屏把面板拉满，避免溢出 */
+@media (max-width: 480px) {
+  .dz-nav {
+    width: calc(100vw - 16px);
+    max-height: 80vh;
+  }
+}
+
+/* ===== 名册区（M10）===== */
+.dz-ros-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.dz-ros-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  border-radius: 6px;
+  background: var(--SmartThemeInputColor, #fff);
+  color: var(--SmartThemeBodyTextColor, #222);
+  font-size: 0.9em;
+}
+.dz-ros-row2 {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.dz-ros-row2 select {
+  flex: 1 1 auto;
+  min-width: 90px;
+  padding: 3px 6px;
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  border-radius: 6px;
+  background: var(--SmartThemeInputColor, #fff);
+  color: var(--SmartThemeBodyTextColor, #222);
+  font-size: 0.85em;
+}
+.dz-ros-favonly {
+  font-size: 0.82em;
+  white-space: nowrap;
+}
+.dz-ros-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dz-ros-group {
+  margin-top: 8px;
+  font-weight: 600;
+  font-size: 0.85em;
+  color: var(--dz-accent, #3b82f6);
+  border-bottom: 1px solid var(--SmartThemeBorderColor, #555);
+  padding-bottom: 2px;
+}
+.dz-ros-count {
+  color: #9a9a9a;
+  font-weight: 400;
+}
+.dz-ros-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+.dz-ros-row:hover {
+  background: rgba(127, 127, 127, 0.16);
+}
+.dz-ros-row.dz-ros-active {
+  outline: 2px solid var(--dz-accent, #3b82f6);
+}
+.dz-ros-av {
+  position: relative;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--dz-accent, #3b82f6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+.dz-ros-av .dz-ros-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dz-ros-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.dz-ros-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dz-ros-meta {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.dz-ros-world {
+  font-size: 0.72em;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(127, 127, 127, 0.22);
+  color: var(--SmartThemeBodyTextColor, #444);
+  white-space: nowrap;
+}
+.dz-ros-tag {
+  font-size: 0.72em;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--dz-accent, #3b82f6);
+  color: #fff;
+  white-space: nowrap;
+}
+.dz-ros-fav {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #ffb020;
+  font-size: 1.15em;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.dz-ros-fav.dz-ros-fav-on {
+  color: #ffb020;
+}
+.dz-ros-more,
+.dz-ros-empty {
+  font-size: 0.8em;
+  color: #9a9a9a;
+  padding: 8px 4px;
+  text-align: center;
+}
+
+/* ===== 美化区（M11 整体自适应 + M12 卡片自适应壳）===== */
+.dz-beauty-section {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor, #555);
+}
+.dz-beauty-section:last-child {
+  border-bottom: 0;
+}
+.dz-beauty-h {
+  margin: 0 0 6px;
+  font-size: 0.95em;
+  color: var(--dz-accent, #3b82f6);
+}
+.dz-beauty-section .dz-btn {
+  margin: 6px 8px 0 0;
+  padding: 4px 10px;
+  font-size: 0.85em;
+}
+
+/* ===== 卡片响应式（M12）：流体宽本就支持，这里补窄屏断点 ===== */
+@media (max-width: 480px) {
+  .dz-card {
+    font-size: 0.9em;
+    margin: 6px 0;
+    border-left-width: 3px;
+  }
+  .dz-body {
+    padding: 5px 8px;
+  }
+  .dz-row {
+    flex-wrap: wrap;
+    gap: 2px 8px;
+  }
+  .dz-k {
+    flex: 0 0 auto;
+  }
+  .dz-iframe {
+    min-height: 200px;
+  }
+}
+
+/* ===== M13 绑定区（角色 ↔ 世界书）===== */
+.dz-bind-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+.dz-bind-sel,
+.dz-bind-input {
+  flex: 1 1 120px;
+  min-width: 0;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--dz-border, #4a4a55);
+  background: var(--SmartThemeInputBg, #2a2a33);
+  color: var(--SmartThemeBodyColor, #e7e7ec);
+  font-size: 0.9em;
+}
+.dz-bind-row2 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0;
+}
+.dz-bind-counts {
+  font-size: 0.8em;
+  color: #9a9a9a;
+  margin-left: auto;
+}
+.dz-bind-status {
+  font-size: 0.82em;
+  color: var(--dz-accent, #3b82f6);
+  min-height: 1.1em;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.dz-bind-status-show {
+  opacity: 1;
+}
+.dz-bind-list {
+  margin-top: 4px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.dz-bind-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 6px;
+}
+.dz-bind-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.dz-bind-av {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--dz-accent, #3b82f6);
+  color: #fff;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+}
+.dz-bind-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dz-bind-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.dz-bind-name {
+  font-weight: 600;
+  font-size: 0.9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dz-bind-world {
+  display: inline-block;
+  font-size: 0.72em;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--dz-accent, #3b82f6);
+  color: #fff;
+  margin-right: 4px;
+}
+.dz-bind-none {
+  font-size: 0.72em;
+  color: #9a9a9a;
+  font-style: italic;
+}
+.dz-bind-unbind {
+  flex: 0 0 auto;
+  border: 1px solid #b4455a;
+  background: transparent;
+  color: #e07a8a;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.8em;
+  cursor: pointer;
+}
+.dz-bind-unbind:hover {
+  background: rgba(180, 69, 90, 0.15);
+}
+.dz-bind-more,
+.dz-bind-empty {
+  font-size: 0.8em;
+  color: #9a9a9a;
+  padding: 8px 4px;
+  text-align: center;
+}
+
+/* 移动端：窄屏让表单与统计换行 */
+@media (max-width: 480px) {
+  .dz-bind-form {
+    flex-direction: column;
+  }
+  .dz-bind-sel,
+  .dz-bind-input {
+    flex: 1 1 auto;
+  }
+  .dz-bind-counts {
+    margin-left: 0;
+  }
+}
+
+/* ===== 小手机模板条（M16-B）===== */
+/* 独立固定底条：z-index 低于悬浮窗(9000)与酒馆模态，pointer-events 仅限自身，
+   不挡全屏、不盖输入框（由 JS 计算贴输入框上方）；与 QR/输入助手 bar 互不干扰 */
+.dz-phonebar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  background: var(--SmartThemeBodyColor, #fff);
+  color: var(--SmartThemeBodyTextColor, #222);
+  border-top: 1px solid var(--SmartThemeBorderColor, #555);
+  box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+}
+.dz-phonebar[hidden] {
+  display: none;
+}
+.dz-phonebar-track {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  align-items: center;
+}
+.dz-phonebar-btn {
+  flex: 0 0 auto;
+  border: 1px solid var(--dz-accent, #3b82f6);
+  background: transparent;
+  color: var(--dz-accent, #3b82f6);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.85em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dz-phonebar-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+.dz-phonebar-manage {
+  background: var(--dz-accent, #3b82f6);
+  color: #fff;
+}
+.dz-phonebar-more {
+  flex: 0 0 auto;
+  font-size: 0.8em;
+  color: #9a9a9a;
+}
+.dz-phonebar-collapse {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1em;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.dz-phonebar-collapse:hover {
+  background: rgba(127, 127, 127, 0.15);
+}
+/* 收起把手：贴右下角，带安全区适配，不挡输入 */
+.dz-phonebar-handle {
+  position: fixed;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 8001;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--dz-accent, #3b82f6);
+  background: var(--dz-accent, #3b82f6);
+  color: #fff;
+  font-size: 1.2em;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.dz-phonebar-handle[hidden] {
+  display: none;
+}
+@media (max-width: 480px) {
+  .dz-phonebar {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+/* ===== 小手机工坊 · 全屏编辑器（M16-C）===== */
+/* 固定全屏遮罩：z-index 9500（高于悬浮窗 9000、低于酒馆原生模态；本扩展独占时不挡其它），
+   .dz- 命名空间；移动端安全区适配；不抢第三方 DOM 容器、不碰通用浮窗类 */
+.dz-phone-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.dz-phone-editor[hidden] {
+  display: none;
+}
+.dz-pe-modal {
+  width: min(1100px, 100%);
+  height: min(92vh, 100%);
+  display: flex;
+  flex-direction: column;
+  background: var(--SmartThemeBodyColor, #fff);
+  color: var(--SmartThemeBodyTextColor, #222);
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  border-radius: 12px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.dz-pe-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor, #555);
+}
+.dz-pe-title {
+  font-weight: 600;
+  font-size: 1.05em;
+}
+.dz-pe-backend {
+  font-size: 0.78em;
+  color: var(--dz-accent, #3b82f6);
+}
+.dz-pe-backend-off {
+  color: #b06b00;
+}
+.dz-pe-x {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1em;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.dz-pe-x:hover {
+  background: rgba(127, 127, 127, 0.15);
+}
+.dz-pe-body {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+.dz-pe-list-wrap {
+  flex: 0 0 280px;
+  border-right: 1px solid var(--SmartThemeBorderColor, #555);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.dz-pe-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  font-size: 0.85em;
+  color: #9a9a9a;
+  border-bottom: 1px solid var(--SmartThemeBorderColor, #555);
+}
+.dz-pe-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 6px;
+}
+.dz-pe-empty {
+  padding: 14px 8px;
+  color: #9a9a9a;
+  font-size: 0.85em;
+}
+.dz-pe-item {
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.dz-pe-item:hover {
+  background: rgba(127, 127, 127, 0.08);
+}
+.dz-pe-item-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.dz-pe-item-name {
+  font-weight: 600;
+  font-size: 0.92em;
+}
+.dz-pe-badge {
+  font-size: 0.68em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  color: #8a8a8a;
+}
+.dz-pe-badge-exec {
+  color: var(--dz-accent, #3b82f6);
+  border-color: var(--dz-accent, #3b82f6);
+}
+.dz-pe-item-acts {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.dz-pe-form {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  overflow-y: auto;
+  min-width: 0;
+}
+.dz-pe-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85em;
+}
+.dz-pe-row2 {
+  flex-direction: row;
+  gap: 12px;
+}
+.dz-pe-row2 > label {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dz-pe-input,
+.dz-pe-sel,
+.dz-pe-code {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--SmartThemeInputColor, #fff);
+  color: var(--SmartThemeBodyTextColor, #222);
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.92em;
+}
+.dz-pe-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  resize: vertical;
+  line-height: 1.45;
+  white-space: pre;
+}
+.dz-pe-ai {
+  border: 1px dashed var(--SmartThemeBorderColor, #555);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dz-pe-ai-ask {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 56px;
+  resize: vertical;
+  background: var(--SmartThemeInputColor, #fff);
+  color: var(--SmartThemeBodyTextColor, #222);
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+.dz-pe-ai-note {
+  font-size: 0.76em;
+  color: var(--SmartThemeMutedColor, #8a8a8a);
+  line-height: 1.4;
+  background: var(--SmartThemeQuoteColor, rgba(128,128,128,0.08));
+  border-left: 3px solid var(--dz-accent, #3b82f6);
+  padding: 5px 8px;
+  border-radius: 4px;
+}
+.dz-pe-ai-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dz-pe-ai-status {
+  font-size: 0.8em;
+  color: #9a9a9a;
+}
+.dz-pe-ai-preview {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 90px;
+  max-height: 240px;
+  resize: vertical;
+  background: var(--SmartThemeInputColor, #fff);
+  color: var(--SmartThemeBodyTextColor, #222);
+  border: 1px dashed var(--dz-accent, #3b82f6);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82em;
+  white-space: pre;
+  line-height: 1.4;
+}
+.dz-pe-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dz-pe-btn {
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  background: transparent;
+  color: var(--SmartThemeBodyTextColor, #222);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.88em;
+}
+.dz-pe-btn:hover {
+  background: rgba(127, 127, 127, 0.1);
+}
+.dz-pe-primary {
+  border-color: var(--dz-accent, #3b82f6);
+  background: var(--dz-accent, #3b82f6);
+  color: #fff;
+}
+.dz-pe-mini {
+  border: 1px solid var(--SmartThemeBorderColor, #555);
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.78em;
+  cursor: pointer;
+}
+.dz-pe-mini:hover {
+  background: rgba(127, 127, 127, 0.1);
+}
+.dz-pe-danger {
+  border-color: #d9534f;
+  color: #d9534f;
+}
+.dz-pe-footer {
+  border-top: 1px solid var(--SmartThemeBorderColor, #555);
+  padding: 6px 14px;
+}
+.dz-pe-hint {
+  font-size: 0.8em;
+  color: #8a8a8a;
+}
+.dz-pe-hint-err {
+  color: #d9534f;
+}
+@media (max-width: 720px) {
+  .dz-pe-body {
+    flex-direction: column;
+  }
+  .dz-pe-list-wrap {
+    flex: 0 0 auto;
+    max-height: 30vh;
+    border-right: 0;
+    border-bottom: 1px solid var(--SmartThemeBorderColor, #555);
+  }
+}
+
+/* ==========================================================================
+   ===== M17 · 情绪拼贴皮肤（由外部「独立整页美化稿」改造而来）==============
+   --------------------------------------------------------------------------
+   原稿是一份 standalone HTML 页面（Cinder 色系 + 笔记本打孔 / 胶带 / 回形针 /
+   灰度照片 / 衬线展示标题 / 噪点质感）。整页稿不能直接塞进酒馆，这里做了改造：
+
+     1. 删掉 body::before/after 全屏 fixed 覆盖层 —— 那会盖住整个酒馆聊天区；
+     2. 删掉 `* { margin:0; padding:0 }` —— 那会重置酒馆和所有第三方扩展的排版；
+     3. 不再写死黑底黑字 —— 改走 CSS 变量：cinder 忠实原稿暗色调，
+        paper 则跟随 --SmartTheme* 主题变量，亮色主题也不刺眼；
+     4. 去掉外链 Unsplash 图片与 Google 字体 —— 离线可用、无隐私/加载失败问题；
+        噪点改用内联 SVG（data-uri），只用系统衬线字体栈；
+     5. 展示型组件（hero / palette / photo-stack）翻译成卡片结构能承载的质感：
+        打孔列、胶带、回形针、色卡行 hover 位移、灰度照片、衬线标题、引言式备注。
+
+   作用域硬约束：所有选择器都以 html.dz-skin-* 起头、以 .dz- 元素结尾，
+   **绝不命中任何酒馆原生 DOM**，也不改酒馆主题变量。
+
+   层级说明：只加「质感层」(.dz-skin-collage) + 「配色层」(.dz-skin-cinder / -paper)，
+   质感只写一份，配色差异全靠变量覆盖，后续加配色不用复制整段样式。
+   切换皮肤只换 <html> 上的类 → 纯 CSS 生效，**不需要重渲染消息**。
+   ========================================================================== */
+
+/* ---- 配色层：Cinder（忠实原稿的暗色墨调）---- */
+html.dz-skin-cinder {
+  --dz-ink-0: #000000;   /* Black Metal：最深的底 */
+  --dz-ink-1: #24292e;   /* Cinder：面板/卡片主底 */
+  --dz-ink-2: #4a5156;   /* Chimney：描边 */
+  --dz-ink-3: #808a92;   /* Sea Lion：次要文字 */
+  --dz-ink-4: #bdc7ce;   /* Blue Dolphin：正文 */
+  --dz-surface-1: #2a3036;
+  --dz-surface-2: #1e2328;
+  --dz-hole: rgba(0, 0, 0, 0.62);       /* 打孔点：暗底上要够深才看得见 */
+  --dz-binder: rgba(194, 30, 58, 0.42); /* 装订红线 */
+  --dz-noise-opacity: 0.05;
+  --dz-card-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.34);
+  --dz-panel-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --dz-hover-bg: rgba(189, 199, 206, 0.09);
+}
+
+/* ---- 配色层：Paper（同样的质感，但底色/文字跟随当前酒馆主题）---- */
+html.dz-skin-paper {
+  --dz-ink-1: var(--SmartThemeBodyColor, #ffffff);
+  --dz-ink-2: var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.45));
+  --dz-ink-3: var(--SmartThemeMutedColor, #8a8a8a);
+  --dz-ink-4: var(--SmartThemeBodyTextColor, #222222);
+  --dz-surface-1: rgba(127, 127, 127, 0.05);
+  --dz-surface-2: rgba(127, 127, 127, 0.12);
+  --dz-hole: rgba(0, 0, 0, 0.2);
+  --dz-binder: rgba(194, 30, 58, 0.3);
+  --dz-noise-opacity: 0.035;
+  --dz-card-shadow: 0 8px 22px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --dz-panel-shadow: 0 12px 34px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.1);
+  --dz-hover-bg: rgba(127, 127, 127, 0.12);
+}
+
+/* ---- 质感层通用：字体栈与噪点（两个配色共用，零外链）---- */
+html.dz-skin-collage {
+  --dz-font-display: 'Cormorant Garamond', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', 'STSong', Georgia, serif;
+  --dz-font-mono: 'SF Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --dz-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== 卡片：笔记本纸面（打孔 + 装订线 + 胶带 + 回形针 + 噪点）===== */
+html.dz-skin-collage .dz-card {
+  position: relative;
+  border: 1px solid var(--dz-ink-2, #4a5156);
+  border-left-width: 1px; /* 覆盖经典款的 4px 强调左边框，改由装订线承担视觉重点 */
+  border-radius: 3px;
+  margin: 12px 0;
+  background: linear-gradient(145deg, var(--dz-surface-1, #2a3036) 0%, var(--dz-surface-2, #1e2328) 100%);
+  color: var(--dz-ink-4, #bdc7ce);
+  box-shadow: var(--dz-card-shadow, 0 8px 22px rgba(0, 0, 0, 0.2));
+  font-weight: 300;
+  letter-spacing: 0.02em;
+}
+/* 左侧装订红线（原稿 note-card::before） */
+html.dz-skin-collage .dz-card::before {
+  content: '';
+  position: absolute;
+  left: 22px;
+  top: 16px;
+  bottom: 16px;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--dz-binder, rgba(194, 30, 58, 0.4)) 14%, var(--dz-binder, rgba(194, 30, 58, 0.4)) 86%, transparent);
+  pointer-events: none;
+}
+/* 打孔列：原稿用 mask-image 挖洞（6 个固定坐标，卡片一高就对不上；遮罩还会把卡片阴影裁掉），
+   这里改成可无限重复的 radial-gradient 小孔列，任意高度都均匀，且不动阴影。
+   孔径刻意做小（1.5px）——打孔是"细节质感"，不是主角，太大就变成波点装饰了。 */
+html.dz-skin-collage .dz-card::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 30px;
+  bottom: 30px;
+  width: 10px;
+  background-image: radial-gradient(circle at 50% 50%, var(--dz-hole, rgba(0, 0, 0, 0.5)) 0 1.5px, transparent 1.9px);
+  background-size: 10px 26px;
+  background-repeat: repeat-y;
+  pointer-events: none;
+}
+
+/* 标题：衬线展示体 + 胶带 + 回形针 */
+html.dz-skin-collage .dz-title {
+  position: relative;
+  background: transparent;
+  color: var(--dz-ink-4, #bdc7ce);
+  font-family: var(--dz-font-display, serif);
+  font-size: 1.4em;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  line-height: 1.25;
+  padding: 16px 16px 8px 34px;
+  border-bottom: 1px solid var(--dz-ink-2, #4a5156);
+  word-break: break-word;
+}
+/* 胶带（原稿 .tape）：压在标题栏顶端，微旋转，半透明 */
+html.dz-skin-collage .dz-title::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 84px;
+  height: 17px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: currentColor;
+  opacity: 0.11;
+  border-left: 2px dotted currentColor;
+  border-right: 2px dotted currentColor;
+  pointer-events: none;
+}
+/* 回形针（原稿 .clip）：别在标题栏右侧 */
+html.dz-skin-collage .dz-title::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: 18px;
+  width: 13px;
+  height: 26px;
+  border: 2px solid currentColor;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 0;
+  transform: rotate(14deg);
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+/* 正文区：留出装订线位置 + 噪点质感 */
+html.dz-skin-collage .dz-body {
+  position: relative;
+  padding: 10px 16px 14px 34px;
+}
+html.dz-skin-collage .dz-body::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--dz-noise);
+  opacity: var(--dz-noise-opacity, 0.04);
+  pointer-events: none;
+}
+
+/* 字段行：原稿 .palette-row 的 hover 位移动画 */
+html.dz-skin-collage .dz-row {
+  align-items: baseline;
+  padding: 4px 8px;
+  border-radius: 2px;
+  transition: padding-left 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.35s ease;
+}
+html.dz-skin-collage .dz-row:hover {
+  padding-left: 18px;
+  background: var(--dz-hover-bg, rgba(127, 127, 127, 0.12));
+}
+/* 字段名：等宽小字 + 字距，像色卡上的标签
+   必须写成 .dz-card .dz-k：经典款有 `.dz-row .dz-k`（0,2,0），同权重下后者靠后写会赢，
+   之前就是被它盖住了。这里提到 (0,3,0) 稳压，不靠源码顺序。 */
+html.dz-skin-collage .dz-card .dz-k {
+  flex: 0 0 7.5em;
+  font-family: var(--dz-font-mono, monospace);
+  font-size: 0.78em;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dz-ink-3, #808a92);
+  opacity: 0.85;
+}
+html.dz-skin-collage .dz-card .dz-v {
+  color: var(--dz-ink-4, #bdc7ce);
+  font-size: 0.94em;
+  line-height: 1.9;
+}
+/* 备注/独白：原稿 .quote-* 的引言式呈现（斜体衬线 + 左侧强调线）*/
+html.dz-skin-collage .dz-notes {
+  margin-top: 12px;
+  padding: 8px 0 2px 14px;
+  border-top: 1px solid var(--dz-ink-2, #4a5156);
+  border-left: 1px solid var(--dz-accent, #3b82f6);
+  color: var(--dz-ink-3, #808a92);
+  font-family: var(--dz-font-display, serif);
+  font-style: italic;
+  font-size: 1.02em;
+  letter-spacing: 0.04em;
+  line-height: 2;
+}
+/* 卡片内图片：原稿 .photo-item 的灰度滤镜 */
+html.dz-skin-collage .dz-card img {
+  max-width: 100%;
+  filter: grayscale(0.4) contrast(1.05);
+  transition: filter 0.55s ease;
+}
+html.dz-skin-collage .dz-card img:hover {
+  filter: grayscale(0) contrast(1);
+}
+/* 渲染失败卡片：保持红色警示，不被暗色质感吃掉 */
+html.dz-skin-collage .dz-card.dz-error {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+html.dz-skin-collage .dz-card.dz-error .dz-title {
+  color: #ef4444;
+  border-bottom-color: rgba(239, 68, 68, 0.45);
+}
+
+/* ===== 岛民名册悬浮窗：墨色纸面 + 噪点 ===== */
+html.dz-skin-collage .dz-nav {
+  border: 1px solid var(--dz-ink-2, #4a5156);
+  border-radius: 6px;
+  background: var(--dz-ink-1, #24292e);
+  color: var(--dz-ink-4, #bdc7ce);
+  box-shadow: var(--dz-panel-shadow, 0 12px 40px rgba(0, 0, 0, 0.28));
+  font-weight: 300;
+}
+html.dz-skin-collage .dz-nav-header {
+  background-color: var(--dz-ink-2, #4a5156);
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.12));
+  color: var(--dz-ink-4, #bdc7ce);
+  border-bottom: 1px solid var(--dz-ink-2, #4a5156);
+  letter-spacing: 0.14em;
+  padding: 9px 10px;
+}
+html.dz-skin-collage .dz-nav-title {
+  font-family: var(--dz-font-display, serif);
+  font-size: 1.15em;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+html.dz-skin-collage .dz-nav-tabs {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 3px;
+}
+html.dz-skin-collage .dz-nav-tab {
+  font-family: var(--dz-font-mono, monospace);
+  font-size: 0.66em;
+  letter-spacing: 0.14em;
+  border-radius: 2px;
+  color: var(--dz-ink-4, #bdc7ce);
+}
+html.dz-skin-collage .dz-nav-tab.dz-nav-active {
+  background: var(--dz-ink-4, #bdc7ce);
+  color: var(--dz-ink-1, #24292e);
+  font-weight: 400;
+  box-shadow: none;
+}
+html.dz-skin-collage .dz-nav-close {
+  color: var(--dz-ink-4, #bdc7ce);
+  font-family: var(--dz-font-mono, monospace);
+}
+html.dz-skin-collage .dz-nav-body {
+  position: relative;
+  padding: 12px;
+}
+html.dz-skin-collage .dz-nav-body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--dz-noise);
+  opacity: var(--dz-noise-opacity, 0.04);
+  pointer-events: none;
+}
+html.dz-skin-collage .dz-nav-body::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.5);
+}
+/* 分区标题：等宽大写小标签（呼应原稿 .hero-label）
+   注意：只作用于悬浮窗内部（.dz-nav-body 内），**不去动设置面板**——
+   设置面板在酒馆扩展页里，我们对它的承诺是「对齐原生扩展观感」，不应被皮肤改写。 */
+html.dz-skin-collage .dz-beauty-h {
+  font-family: var(--dz-font-mono, monospace);
+  font-size: 0.7em;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--dz-ink-3, #808a92);
+  margin: 14px 0 6px;
+}
+html.dz-skin-collage .dz-nav-body .dz-hint {
+  color: var(--dz-ink-3, #808a92);
+  font-size: 0.8em;
+  letter-spacing: 0.03em;
+}
+
+/* ===== 名册区：行 hover 位移 + 头像灰度 ===== */
+html.dz-skin-collage .dz-ros-row {
+  border-radius: 2px;
+  transition: padding-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.3s ease;
+}
+html.dz-skin-collage .dz-ros-row:hover {
+  padding-left: 14px;
+  background: var(--dz-hover-bg, rgba(127, 127, 127, 0.12));
+}
+html.dz-skin-collage .dz-ros-group {
+  font-family: var(--dz-font-mono, monospace);
+  font-size: 0.66em;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dz-ink-3, #808a92);
+  border-bottom-color: var(--dz-ink-2, #4a5156);
+  padding-bottom: 4px;
+}
+html.dz-skin-collage .dz-ros-name {
+  font-family: var(--dz-font-display, serif);
+  font-size: 1.12em;
+  letter-spacing: 0.04em;
+  font-weight: 400;
+}
+html.dz-skin-collage .dz-ros-av .dz-ros-img {
+  filter: grayscale(0.45) contrast(1.05);
+  transition: filter 0.45s ease;
+}
+html.dz-skin-collage .dz-ros-row:hover .dz-ros-av .dz-ros-img {
+  filter: grayscale(0) contrast(1);
+}
+html.dz-skin-collage .dz-ros-world {
+  background: var(--dz-hover-bg, rgba(127, 127, 127, 0.16));
+  color: var(--dz-ink-3, #808a92);
+  border-radius: 2px;
+  font-family: var(--dz-font-mono, monospace);
+  letter-spacing: 0.08em;
+}
+html.dz-skin-collage .dz-ros-tag {
+  border-radius: 2px;
+  font-family: var(--dz-font-mono, monospace);
+  letter-spacing: 0.08em;
+}
+html.dz-skin-collage .dz-ros-more,
+html.dz-skin-collage .dz-ros-empty,
+html.dz-skin-collage .dz-bind-more,
+html.dz-skin-collage .dz-bind-empty {
+  color: var(--dz-ink-3, #808a92);
+  letter-spacing: 0.1em;
+}
+
+/* ===== 小手机模板条：贴同样的墨色纸面 ===== */
+html.dz-skin-collage .dz-phonebar {
+  background: var(--dz-ink-1, #24292e);
+  color: var(--dz-ink-4, #bdc7ce);
+  border-top: 1px solid var(--dz-ink-2, #4a5156);
+  box-shadow: 0 -6px 22px rgba(0, 0, 0, 0.35);
+}
+html.dz-skin-collage .dz-phonebar-btn {
+  border-radius: 2px;
+  border-color: var(--dz-ink-2, #4a5156);
+  color: var(--dz-ink-4, #bdc7ce);
+  font-family: var(--dz-font-mono, monospace);
+  font-size: 0.74em;
+  letter-spacing: 0.1em;
+}
+html.dz-skin-collage .dz-phonebar-btn:hover {
+  background: var(--dz-hover-bg, rgba(127, 127, 127, 0.12));
+}
+html.dz-skin-collage .dz-phonebar-manage {
+  background: var(--dz-accent, #3b82f6);
+  border-color: var(--dz-accent, #3b82f6);
+  color: #fff;
+}
+html.dz-skin-collage .dz-phonebar-more {
+  color: var(--dz-ink-3, #808a92);
+}
+html.dz-skin-collage .dz-phonebar-collapse {
+  color: var(--dz-ink-4, #bdc7ce);
+}
+
+/* ===== 按钮 / 输入：拼贴观感（只在悬浮窗内收窄圆角与字距）===== */
+html.dz-skin-collage .dz-nav-body .dz-btn {
+  border-radius: 2px;
+  background: transparent;
+  border-color: var(--dz-ink-2, #4a5156);
+  color: var(--dz-ink-4, #bdc7ce);
+  font-family: var(--dz-font-mono, monospace);
+  font-size: 0.72em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+}
+html.dz-skin-collage .dz-nav-body .dz-btn:hover {
+  background: var(--dz-hover-bg, rgba(127, 127, 127, 0.12));
+  filter: none;
+}
+/* 原生按钮栏里的「📒 名册」钮：保持原生观感，只加一点点字距 */
+html.dz-skin-collage .dz-nav-toggle {
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+}
+
+/* ===== 窄屏适配：纸张留白收窄，保住可读性 ===== */
+@media (max-width: 480px) {
+  html.dz-skin-collage .dz-card {
+    margin: 9px 0;
+    font-size: 0.92em;
+  }
+  html.dz-skin-collage .dz-title {
+    font-size: 1.22em;
+    padding: 14px 12px 7px 30px;
+  }
+  html.dz-skin-collage .dz-body {
+    padding: 8px 12px 12px 30px;
+  }
+  html.dz-skin-collage .dz-card::before {
+    left: 19px;
+  }
+  html.dz-skin-collage .dz-row {
+    flex-wrap: wrap;
+    gap: 2px 8px;
+  }
+  html.dz-skin-collage .dz-k {
+    flex: 0 0 auto;
+  }
+  html.dz-skin-collage .dz-row:hover {
+    padding-left: 12px;
+  }
+}
+
+/* ===== 无障碍：尊重「减少动效」偏好，关掉位移/滤镜过渡 ===== */
+@media (prefers-reduced-motion: reduce) {
+  html.dz-skin-collage .dz-row,
+  html.dz-skin-collage .dz-ros-row,
+  html.dz-skin-collage .dz-card img,
+  html.dz-skin-collage .dz-ros-av .dz-ros-img {
+    transition: none;
+  }
+}
+

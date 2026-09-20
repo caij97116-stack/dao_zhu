@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dz-skin-collage dz-skin-cinder">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>岛主历险记 · 皮肤效果预览</title>
+<!-- 直接引用扩展真实样式，预览的就是实际生效的 CSS -->
+<link rel="stylesheet" href="./style.css">
+<style>
+  /* 仅预览页外壳，非扩展内容 */
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  #pv-bar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 10px 12px; margin: -24px -24px 20px;
+    font-size: 13px;
+  }
+  #pv-bar .grp { display: flex; align-items: center; gap: 6px; margin-right: 14px; }
+  #pv-bar b { font-size: 12px; letter-spacing: .1em; opacity: .8; font-weight: 600; }
+  #pv-bar button {
+    border: 1px solid rgba(128,128,128,.5); background: transparent;
+    padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
+  }
+  #pv-bar button.pv-on { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+  #pv-stage { max-width: 760px; margin: 0 auto; }
+  .pv-label { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; opacity: .55; margin: 26px 0 10px; }
+  .pv-prose { line-height: 1.9; font-size: 14px; margin: 10px 0; }
+  .pv-ros { max-width: 360px; }
+</style>
+</head>
+<body>
+
+<div id="pv-bar">
+  <div class="grp">
+    <b>皮肤</b>
+    <button type="button" data-skin="cinder">拼贴 · 墨</button>
+    <button type="button" data-skin="paper">拼贴 · 纸</button>
+    <button type="button" data-skin="classic">经典</button>
+  </div>
+  <div class="grp">
+    <b>模拟酒馆主题</b>
+    <button type="button" data-theme="dark">暗色</button>
+    <button type="button" data-theme="light">亮色</button>
+  </div>
+  <div class="grp"><span id="pv-note" style="opacity:.7"></span></div>
+</div>
+
+<div id="pv-stage">
+  <div class="pv-label">聊天正文 + 卡片（真实渲染器输出）</div>
+  <div class="pv-prose">她把那封信折了三折，塞进外套内袋，像是塞进一件再也拿不出来的事。</div>
+  <div id="pv-cards"></div>
+  <div class="pv-prose">「走吧，」岛主说，「潮水要退了。」</div>
+
+  <div class="pv-label">岛民名册行</div>
+  <div class="pv-ros">
+    <div class="dz-ros-group">世界 · 雾岛 <span class="dz-ros-count">2</span></div>
+    <div class="dz-ros-row">
+      <div class="dz-ros-av">绘</div>
+      <div class="dz-ros-main">
+        <div class="dz-ros-name">内永绘里</div>
+        <div class="dz-ros-meta"><span class="dz-ros-world">雾岛</span><span class="dz-ros-tag">常驻</span></div>
+      </div>
+      <button type="button" class="dz-ros-fav dz-ros-fav-on">★</button>
+    </div>
+    <div class="dz-ros-row">
+      <div class="dz-ros-av">松</div>
+      <div class="dz-ros-main">
+        <div class="dz-ros-name">松子</div>
+        <div class="dz-ros-meta"><span class="dz-ros-world">旧港</span></div>
+      </div>
+      <button type="button" class="dz-ros-fav">☆</button>
+    </div>
+  </div>
+
+  <div class="pv-label">按钮</div>
+  <div><button type="button" class="dz-btn">用当前设置重新美化当前聊天</button></div>
+</div>
+
+<script type="module">
+// 用扩展真实模块渲染，避免预览与实机不一致
+import { renderMessage } from './src/renderer.js';
+import { SKINS, normalizeSkin, applySkin, skinHintOf } from './src/skin.js';
+
+const SAMPLE = `她低下头，很久才开口。
+
+[card]
+title=内永绘里 · 独白
+theme=purple
+地点=旧港码头
+时间=黄昏
+状态=犹豫
+__notes=我不习惯被爱。我害怕自己依赖松子的爱，我办不到。对于习惯了黑暗的我来说，松子的爱太刺眼了，让我觉得好痛。
+[/card]
+
+[card]
+title=物品 · 折了三折的信
+theme=dark
+来源=外套内袋
+备注=似乎再也拿不出来
+[/card]
+
+[card]
+title=状态面板
+theme=blue
+体力=7 / 10
+心情=低落
+持有=铜钥匙 ×1
+[/card]`;
+
+const cardsHost = document.getElementById('pv-cards');
+const res = renderMessage(SAMPLE, { enabled: true, allowHtml: false, allowIframe: false });
+cardsHost.innerHTML = res.html || '';
+
+// ---- 模拟酒馆主题变量（paper 皮肤会读取它们）----
+const THEMES = {
+  dark: {
+    '--SmartThemeBodyColor': '#1c1f24',
+    '--SmartThemeBodyTextColor': '#e6e8ea',
+    '--SmartThemeBorderColor': 'rgba(128,128,128,.45)',
+    '--SmartThemeMutedColor': '#9aa0a6',
+    background: '#14161a',
+    color: '#e6e8ea',
+  },
+  light: {
+    '--SmartThemeBodyColor': '#ffffff',
+    '--SmartThemeBodyTextColor': '#22252a',
+    '--SmartThemeBorderColor': 'rgba(128,128,128,.4)',
+    '--SmartThemeMutedColor': '#8a8f96',
+    background: '#f4f5f7',
+    color: '#22252a',
+  },
+};
+function setTheme(name) {
+  const t = THEMES[name] || THEMES.dark;
+  const r = document.documentElement;
+  for (const k of Object.keys(t)) {
+    if (k.startsWith('--')) r.style.setProperty(k, t[k]);
+  }
+  document.body.style.background = t.background;
+  document.body.style.color = t.color;
+  document.getElementById('pv-bar').style.background = t['--SmartThemeBodyColor'];
+  document.getElementById('pv-bar').style.color = t['--SmartThemeBodyTextColor'];
+  document.querySelectorAll('#pv-bar button[data-theme]').forEach((b) => {
+    b.classList.toggle('pv-on', b.dataset.theme === name);
+  });
+}
+
+// ---- 皮肤切换：调用扩展真实 applySkin ----
+const note = document.getElementById('pv-note');
+function setSkin(v) {
+  const id = applySkin(v, document);
+  document.querySelectorAll('#pv-bar button[data-skin]').forEach((b) => {
+    b.classList.toggle('pv-on', b.dataset.skin === id);
+  });
+  note.textContent = skinHintOf(id);
+}
+document.querySelectorAll('#pv-bar button[data-skin]').forEach((b) => {
+  b.addEventListener('click', () => setSkin(b.dataset.skin));
+});
+document.querySelectorAll('#pv-bar button[data-theme]').forEach((b) => {
+  b.addEventListener('click', () => setTheme(b.dataset.theme));
+});
+
+const _qp = new URLSearchParams(location.search);
+const _initT = _qp.get('t') || 'dark';
+const _initS = _qp.get('s') || 'cinder';
+setTheme(_initT);
+setSkin(_initS);
+</script>
+</body>
+</html>

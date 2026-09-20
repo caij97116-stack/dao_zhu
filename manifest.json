@@ -1,0 +1,15 @@
+{
+  "name": "dao-zhu",
+  "display_name": "岛主历险记",
+  "loading_order": 100,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "caij97116-stack",
+  "description": "酒馆聊天美化渲染 + 岛民名册悬浮窗（角色导航 / 美化自适应 / 世界书绑定）+ 小手机工坊（底部模板 / AI 帮写 / 运行器）+ 情绪拼贴皮肤（墨/纸/经典三套）；内置抗弱模型格式指令自动注入，无需手动复制。兼容 SillyTavern 1.17 ~ 1.19+。",
+  "version": "1.2.0",
+  "homePage": "https://github.com/caij97116-stack/dao_zhu",
+  "auto_update": true,
+  "minimum_client_version": "1.17.0"
+}
