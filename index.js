@@ -27,11 +27,9 @@ import { renderRosterPane } from './src/navigator-roster.js';
 import { renderBeautifyPane } from './src/theme-adapt.js';
 import { renderCardAdaptPane } from './src/card-adapt.js';
 import { renderBindingPane } from './src/binding.js';
-import { attachPhoneBar, setPhoneBarVisible, refreshPhoneBar } from './src/phone-scripts-bar.js';
-import { initPhoneEditor, openPhoneEditor } from './src/phone-scripts-editor.js';
+import { attachPhoneBar } from './src/phone-scripts-bar.js';
+import { initPhoneEditor } from './src/phone-scripts-editor.js';
 import { initPhoneRunner } from './src/phone-scripts-runner.js';
-import { defaultPhoneScriptsState } from './src/phone-scripts-data.js';
-import { SKINS, DEFAULT_SKIN, normalizeSkin, applySkin } from './src/skin.js';
 
 const MODULE_NAME = 'dao-zhu';
 const DISPLAY_NAME = '岛主历险记';
@@ -44,10 +42,7 @@ export const defaultSettings = Object.freeze({
   enabled: true,      // 是否启用自动美化
   allowHtml: false,   // 是否允许卡片内 html 富文本字段（需酒馆内置 DOMPurify，否则自动转义兜底）
   allowIframe: false, // 是否允许卡片内 iframe 字段（仅 http/https，沙箱隔离）
-  // —— M6 抗弱模型格式指令：内置自动注入（默认开；关掉则退回「手动复制」模式）——
-  builtinFormatInstruction: true,
-  // —— M17 界面皮肤：cinder(拼贴墨) / paper(拼贴纸，跟随主题) / classic(旧版简洁) ——
-  skin: DEFAULT_SKIN,
+  cardSkin: 'cinder', // 卡片/悬浮窗视觉皮肤：classic 经典 | cinder 暗色拼贴 | paper 跟随酒馆主题
   // —— 岛民名册悬浮窗（M9+）——
   navigator: {
     open: false,      // 悬浮窗是否默认展开
@@ -120,60 +115,55 @@ function copyText(text) {
 }
 
 // ---- 设置面板 HTML（静态可信内容，无需 DOMPurify）----
-// 结构对齐 SillyTavern 原生扩展（酒馆助手 / 鸡尾酒 等）的可折叠抽屉：
-// 用原生 inline-drawer 系列类保证外观一致，但折叠行为由本扩展自己处理
-// （刻意不使用 .inline-drawer-toggle，避免与酒馆自带的事件委托重复绑定导致「点一下开又关」）。
-export function buildSkinOptionsHtml(selected) {
-  const cur = normalizeSkin(selected);
-  return Object.keys(SKINS).map((k) => {
-    const s = SKINS[k];
-    const sel = (k === cur) ? ' selected' : '';
-    return `<option value="${escapeHtml(s.id)}"${sel}>${escapeHtml(s.label)}</option>`;
-  }).join('');
-}
-
-export function buildSettingsHtml() {
+function buildSettingsHtml() {
   return `
 <div class="dz-settings-block inline-drawer">
-  <div class="dz-settings-header inline-drawer-header" id="dz-settings-header" role="button" tabindex="0" aria-expanded="false" title="点击展开 / 折叠设置">
-    <b>📖 ${escapeHtml(DISPLAY_NAME)}</b>
-    <span class="dz-settings-chevron inline-drawer-icon fa-solid fa-circle-chevron-down"></span>
+  <div class="inline-drawer-toggle inline-drawer-header">
+    <b>${escapeHtml(DISPLAY_NAME)}</b>
+    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
   </div>
-  <div class="dz-settings-content" id="dz-settings-content" hidden>
-
-    <h4 class="dz-settings-sub">🎨 界面皮肤</h4>
-    <label class="dz-row-set">皮肤
-      <select id="dz-skin" class="dz-input">${buildSkinOptionsHtml('cinder')}</select>
-    </label>
-    <p class="dz-hint" id="dz-skin-hint">${escapeHtml(SKINS[DEFAULT_SKIN].hint)}</p>
-
+  <div class="inline-drawer-content">
     <label class="dz-row-set"><input type="checkbox" id="dz-enabled"> 启用自动美化（关闭后还原为原始文本）</label>
     <label class="dz-row-set"><input type="checkbox" id="dz-allow-html"> 允许卡片内 html 富文本字段（有 DOMPurify 才渲染，否则自动转义）</label>
     <label class="dz-row-set"><input type="checkbox" id="dz-allow-iframe"> 允许卡片内 iframe 字段（仅 http/https，沙箱隔离）</label>
     <button type="button" id="dz-rebeautify" class="dz-btn">用当前设置重新美化当前聊天</button>
 
-    <h4 class="dz-settings-sub">岛民名册悬浮窗（名册 / 美化 / 绑定）</h4>
-    <label class="dz-row-set"><input type="checkbox" id="dz-nav-showbtn"> 在聊天输入框原生按钮栏显示「📒 名册」按钮（关闭后可在下方临时打开）</label>
+    <h4 class="dz-settings-sub">卡片与悬浮窗皮肤</h4>
+    <label class="dz-row-set">
+      视觉皮肤：
+      <select id="dz-card-skin" class="dz-input">
+        <option value="classic">经典（原始配色）</option>
+        <option value="cinder">Cinder 暗色拼贴（推荐）</option>
+        <option value="paper">Paper 跟随酒馆当前主题</option>
+      </select>
+    </label>
+    <p class="dz-hint">切换皮肤即时生效，无需重新美化或刷新。</p>
+
+    <h4 class="dz-settings-sub">岛民名册悬浮窗（M9+：导航 / 美化 / 绑定）</h4>
+    <label class="dz-row-set"><input type="checkbox" id="dz-nav-showbtn"> 在魔法棒（🪄）菜单里显示「岛民名册」入口（关闭后可在下方临时打开）</label>
     <button type="button" id="dz-nav-open" class="dz-btn">打开岛民名册悬浮窗</button>
 
-    <h4 class="dz-settings-sub">抗弱模型 · 格式指令（已内置自动注入，无需复制）</h4>
+    <h4 class="dz-settings-sub">抗弱模型 · 格式指令（复制到你的预设 / 角色卡）</h4>
     <p class="dz-hint">${escapeHtml(FORMAT_INSTRUCTION_HINT)}</p>
-    <label class="dz-row-set"><input type="checkbox" id="dz-builtin-instr"> 自动内置注入格式指令（关掉则退回「手动复制」模式）</label>
-    <button type="button" id="dz-instr-toggle" class="dz-btn">查看 / 隐藏 指令原文</button>
-    <textarea id="dz-instruction" class="dz-instruction" readonly rows="12" hidden>${FORMAT_INSTRUCTION}</textarea>
-    <button type="button" id="dz-copy-instruction" class="dz-btn">复制格式指令（手动备用）</button>
-
-    <h4 class="dz-settings-sub">📱 小手机工坊（底部模板 / AI 帮写）</h4>
-    <label class="dz-row-set"><input type="checkbox" id="dz-phone-showbar"> 显示小手机模板条（聊天输入框上方，点「⚙ 管理」开工坊）</label>
-    <button type="button" id="dz-phone-open" class="dz-btn">📱 打开小手机工坊（新建 / 编辑 / AI 帮写）</button>
-    <p class="dz-hint">AI 帮写后端：勾选「启用自有 API」并填好三项即用自有 API；否则走酒馆同连接（无需自带 key）。</p>
-    <label class="dz-row-set"><input type="checkbox" id="dz-phone-ownapi"> 启用自有 OpenAI 兼容 API</label>
-    <label class="dz-row-set">Base URL <input type="text" id="dz-phone-baseurl" class="dz-input" placeholder="https://api.openai.com/v1" /></label>
-    <label class="dz-row-set">API Key <input type="password" id="dz-phone-apikey" class="dz-input" placeholder="sk-…（留空则用酒馆同连接）" /></label>
-    <label class="dz-row-set">模型 <input type="text" id="dz-phone-model" class="dz-input" placeholder="gpt-4o-mini" /></label>
-
+    <textarea id="dz-instruction" class="dz-instruction" readonly rows="16">${FORMAT_INSTRUCTION}</textarea>
+    <button type="button" id="dz-copy-instruction" class="dz-btn">复制格式指令</button>
   </div>
 </div>`;
+}
+
+// ---- 应用卡片/悬浮窗视觉皮肤：只切 <html> 上的类，纯 CSS 生效，不需要重渲染消息 ----
+function applyCardSkin(skin) {
+  try {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    root.classList.remove('dz-skin-collage', 'dz-skin-cinder', 'dz-skin-paper');
+    if (skin === 'cinder') {
+      root.classList.add('dz-skin-collage', 'dz-skin-cinder');
+    } else if (skin === 'paper') {
+      root.classList.add('dz-skin-collage', 'dz-skin-paper');
+    }
+    // skin === 'classic'（或其他未知值）：不加任何类，走文件顶部的经典配色
+  } catch (_) { /* 忽略，不影响美化主流程 */ }
 }
 
 // ---- 把设置面板挂到扩展设置容器（特性检测容器 ID，失败重试几次）----
@@ -207,18 +197,6 @@ function mountSettingsPanel(ctx, settings) {
   }
 }
 
-// ---- 确保 settings.phoneScripts 子状态存在（设置面板要读写它，即使底条暂未挂载）----
-function ensurePhoneState(settings) {
-  if (!settings.phoneScripts || typeof settings.phoneScripts !== 'object') {
-    settings.phoneScripts = defaultPhoneScriptsState();
-  }
-  const ps = settings.phoneScripts;
-  if (!ps.ownApi || typeof ps.ownApi !== 'object') {
-    ps.ownApi = { enabled: false, baseUrl: '', apiKey: '', model: '' };
-  }
-  return ps;
-}
-
 // ---- 绑定设置面板交互 ----
 function wireSettingsEvents(root, ctx, settings) {
   const save = (ctx && typeof ctx.saveSettingsDebounced === 'function')
@@ -232,61 +210,14 @@ function wireSettingsEvents(root, ctx, settings) {
   const copyBtn = root.querySelector('#dz-copy-instruction');
   const navShow = root.querySelector('#dz-nav-showbtn');
   const navOpen = root.querySelector('#dz-nav-open');
-  const builtinInstr = root.querySelector('#dz-builtin-instr');
-  const instrToggle = root.querySelector('#dz-instr-toggle');
-  const instrArea = root.querySelector('#dz-instruction');
-  const header = root.querySelector('#dz-settings-header');
-  const content = root.querySelector('#dz-settings-content');
-  const phoneShow = root.querySelector('#dz-phone-showbar');
-  const phoneOpen = root.querySelector('#dz-phone-open');
-  const phoneOwn = root.querySelector('#dz-phone-ownapi');
-  const phoneBase = root.querySelector('#dz-phone-baseurl');
-  const phoneKey = root.querySelector('#dz-phone-apikey');
-  const phoneModel = root.querySelector('#dz-phone-model');
-  const skinSel = root.querySelector('#dz-skin');
-  const skinHint = root.querySelector('#dz-skin-hint');
-
-  // ---- 折叠抽屉：点击标题栏 / 回车 / 空格 均可展开折叠（默认折叠，与原生扩展一致）----
-  const setExpanded = (expanded) => {
-    if (!header || !content) return;
-    content.hidden = !expanded;
-    header.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    const chev = header.querySelector('.dz-settings-chevron');
-    if (chev) chev.style.transform = expanded ? 'rotate(180deg)' : '';
-  };
-  if (header) {
-    header.addEventListener('click', () => setExpanded(content ? content.hidden : true));
-    header.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(content ? content.hidden : true); }
-    });
-  }
-
-  // ---- 小手机工坊：确保 settings.phoneScripts 存在（底条未挂载时也能安全配置）----
-  const phoneState = ensurePhoneState(settings);
-
-  // ---- M17 界面皮肤：只换 <html> 上的类，纯 CSS 生效，无需重渲染消息 ----
-  const curSkin = normalizeSkin(settings.skin);
-  settings.skin = curSkin; // 脏数据（如乱填的字符串）就地归一化，避免下次又回落
-  if (skinSel) skinSel.value = curSkin;
-  if (skinHint) skinHint.textContent = SKINS[curSkin].hint;
-  if (skinSel) skinSel.addEventListener('change', () => {
-    settings.skin = normalizeSkin(skinSel.value);
-    save();
-    try { applySkin(settings.skin); } catch (_) {}
-    if (skinHint) skinHint.textContent = SKINS[settings.skin].hint;
-  });
+  const skinSel = root.querySelector('#dz-card-skin');
 
   // 用已保存设置初始化勾选状态
   if (en) en.checked = settings.enabled !== false;
   if (ah) ah.checked = !!settings.allowHtml;
   if (ai) ai.checked = !!settings.allowIframe;
-  if (builtinInstr) builtinInstr.checked = settings.builtinFormatInstruction !== false;
   if (navShow) navShow.checked = !(settings.navigator && settings.navigator.showButton === false);
-  if (phoneShow) phoneShow.checked = phoneState.showBar !== false;
-  if (phoneOwn) phoneOwn.checked = !!(phoneState.ownApi && phoneState.ownApi.enabled);
-  if (phoneBase) phoneBase.value = (phoneState.ownApi && phoneState.ownApi.baseUrl) || '';
-  if (phoneKey) phoneKey.value = (phoneState.ownApi && phoneState.ownApi.apiKey) || '';
-  if (phoneModel) phoneModel.value = (phoneState.ownApi && phoneState.ownApi.model) || '';
+  if (skinSel) skinSel.value = settings.cardSkin || 'cinder';
 
   if (en) en.addEventListener('change', () => {
     settings.enabled = en.checked;
@@ -304,7 +235,7 @@ function wireSettingsEvents(root, ctx, settings) {
   if (ah) ah.addEventListener('change', onFieldToggle);
   if (ai) ai.addEventListener('change', onFieldToggle);
 
-  // 岛民名册开关：显示/隐藏聊天输入框原生按钮栏里的按钮（关闭后仍可用下方按钮临时打开）
+  // 岛民名册开关：显示/隐藏聊天框右侧按钮（关闭后仍可用下方按钮临时打开）
   if (navShow) navShow.addEventListener('change', () => {
     if (!settings.navigator || typeof settings.navigator !== 'object') settings.navigator = {};
     settings.navigator.showButton = navShow.checked;
@@ -315,53 +246,14 @@ function wireSettingsEvents(root, ctx, settings) {
     try { togglePanel(true); } catch (_) {}
   });
 
-  // 内置格式指令开关：默认开（自动注入）；关掉则退回手动复制模式
-  if (builtinInstr) builtinInstr.addEventListener('change', () => {
-    settings.builtinFormatInstruction = builtinInstr.checked;
+  if (skinSel) skinSel.addEventListener('change', () => {
+    settings.cardSkin = skinSel.value;
     save();
-    // 开启时：若此前未注册（例如启动时特性检测未通过），这里补注册一次
-    if (builtinInstr.checked) {
-      try { registerBuiltinFormatInstruction(ctx, settings); } catch (_) {}
-    }
+    applyCardSkin(settings.cardSkin);
   });
-
-  // 指令原文：默认收起（已内置注入，无需常驻占版面），点按钮查看/隐藏
-  if (instrToggle && instrArea) {
-    instrToggle.addEventListener('click', () => {
-      instrArea.hidden = !instrArea.hidden;
-      instrToggle.textContent = instrArea.hidden ? '查看 / 隐藏 指令原文' : '收起指令原文';
-    });
-  }
-
-  // ---- 小手机工坊 ----
-  // 显示/隐藏底部模板条
-  if (phoneShow) phoneShow.addEventListener('change', () => {
-    phoneState.showBar = phoneShow.checked;
-    save();
-    try { setPhoneBarVisible(phoneShow.checked); } catch (_) {}
-  });
-  // 打开全屏工坊（新建 / 编辑 / AI 帮写 / 导入导出）
-  if (phoneOpen) phoneOpen.addEventListener('click', () => {
-    try { openPhoneEditor(ctx, settings, null); } catch (_) {}
-  });
-  // 自有 OpenAI 兼容 API 三项（勾选启用后才生效）
-  const onOwnApiChange = () => {
-    phoneState.ownApi = {
-      enabled: phoneOwn ? phoneOwn.checked : false,
-      baseUrl: phoneBase ? phoneBase.value.trim() : '',
-      apiKey: phoneKey ? phoneKey.value : '',
-      model: phoneModel ? phoneModel.value.trim() : '',
-    };
-    save();
-  };
-  if (phoneOwn) phoneOwn.addEventListener('change', onOwnApiChange);
-  if (phoneBase) phoneBase.addEventListener('change', onOwnApiChange);
-  if (phoneKey) phoneKey.addEventListener('change', onOwnApiChange);
-  if (phoneModel) phoneModel.addEventListener('change', onOwnApiChange);
 
   if (reBtn) reBtn.addEventListener('click', () => {
     if (settings.enabled !== false) reprocessAll(); else restoreAll();
-    try { refreshPhoneBar(); } catch (_) {}
   });
 
   if (copyBtn) copyBtn.addEventListener('click', () => {
@@ -375,37 +267,13 @@ function wireSettingsEvents(root, ctx, settings) {
   });
 }
 
-// ---- M6 内置抗弱模型格式指令：自动注入聊天系统提示（特性检测 + 安全降级）----
-// 设计要点（对应用户诉求「要内置、不要我们手动复制」）：
-//   1. 默认开启（settings.builtinFormatInstruction !== false），无需用户把指令粘进预设/角色卡；
-//   2. 全程特性检测：只在拿到 eventSource 与 CHAT_COMPLETION_PROMPT 事件时才注册，
-//      旧版本没有该事件就静默跳过（面板仍可手动复制做备用），绝不抛错、绝不改用户预设文件；
-//   3. 注入动作包 try/catch：任何异常都不影响消息正常发送。
-export function registerBuiltinFormatInstruction(ctx, settings) {
-  if (!settings || settings.builtinFormatInstruction === false) return; // 用户关掉了 → 手动模式
-  const eventSource = (ctx && ctx.eventSource) || globalThis.eventSource || null;
-  const event_types = globalThis.event_types || (ctx && ctx.event_types) || null;
-  const ev = event_types && event_types.CHAT_COMPLETION_PROMPT;
-  if (!eventSource || !ev || typeof eventSource.on !== 'function') return; // 特性检测失败 → 安全降级
-
-  eventSource.on(ev, (prompt) => {
-    try {
-      if (!Array.isArray(prompt) || prompt.length === 0) return;
-      // 优先追加到已有 system 消息；没有则插到最前面一条 system
-      const sys = prompt.find((m) => m && m.role === 'system');
-      if (sys) {
-        sys.content = (sys.content || '') + '\n\n' + FORMAT_INSTRUCTION;
-      } else {
-        prompt.unshift({ role: 'system', content: FORMAT_INSTRUCTION });
-      }
-    } catch (_) { /* 忽略：绝不影响消息发送 */ }
-  });
-}
-
 // ---- 应用就绪后执行（M2+ 在这里挂载渲染管线与设置面板）----
 function onReady(ctx) {
   const settings = getSettings(ctx);
   console.log(`[${DISPLAY_NAME}] 初始化完成，挂载渲染管线与设置面板…`);
+
+  // ===== M19：应用已保存的卡片/悬浮窗皮肤（要放在任何卡片渲染之前）=====
+  applyCardSkin(settings.cardSkin || 'cinder');
 
   // ===== M2：增量渲染核心（MutationObserver + 防抖 + 去重 + 清理）=====
   attachIncrementalRenderer(ctx);
@@ -415,14 +283,8 @@ function onReady(ctx) {
   const processor = makeProcessor(settings);
   registerMessageProcessor(processor);
 
-  // ===== M6：挂载设置面板（启用开关 / 允许 HTML·iframe / 格式指令内置状态）=====
+  // ===== M6：挂载设置面板（启用开关 / 允许 HTML·iframe / 内置指令复制）=====
   mountSettingsPanel(ctx, settings);
-
-  // ===== M17：应用界面皮肤（拼贴美学；纯 CSS，切换无需重渲染）=====
-  try { applySkin(settings.skin); } catch (_) {}
-
-  // ===== M6：内置抗弱模型格式指令 —— 自动注入聊天系统提示（默认开，无需手动复制）=====
-  registerBuiltinFormatInstruction(ctx, settings);
 
   // ===== M9：挂载「岛民名册」悬浮窗（拖拽 + 位置记忆 + 三标签页壳；内容由 M10~M13 填充）=====
   attachFloatingPanel(ctx, settings);
@@ -493,9 +355,6 @@ export async function init() {
 }
 
 // ---- 第三方扩展自启动（酒馆只会 import() 本模块，不会主动调用导出的 init，需要自己触发）----
-// 防御式检测 jQuery：酒馆环境必存在，故行为等同「自启动原版」；node 单测环境无 jQuery 时安全跳过。
-if (typeof jQuery !== 'undefined') {
-  jQuery(async () => {
-    await init();
-  });
-}
+jQuery(async () => {
+  await init();
+});
