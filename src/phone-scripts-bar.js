@@ -21,18 +21,25 @@ const HANDLE_ID = 'dz-phonebar-handle';
 
 // M21：排查用——挂载失败时，除了 console.error，再顶一条可点掉的红色提示条到页面上，
 // 这样反馈问题的人不需要会开控制台也能把报错原文截图发出来。
-function showMountError(msg) {
+// M22：临时排查用——不管走到哪个分支（正常挂载/提前退出/报错）都留一条可点掉的
+// 屏幕提示，这样不方便开控制台的人也能直接截图告诉我具体卡在哪一步。
+// 定位问题之后这块会精简掉，不会一直留着。
+function reportMountStatus(msg, isError) {
   try {
     if (typeof document === 'undefined') return;
-    if (document.getElementById('dz-mount-error')) return; // 已经提示过一次，别刷屏
-    const el = document.createElement('div');
-    el.id = 'dz-mount-error';
-    el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;'
-      + 'background:#ef4444;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;'
-      + 'line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.35);white-space:pre-wrap;word-break:break-all;';
-    el.textContent = `[${DISPLAY_NAME}] ${msg}（点一下这条提示可以关掉）`;
-    el.addEventListener('click', () => el.remove());
-    document.body.appendChild(el);
+    let el = document.getElementById('dz-mount-status');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'dz-mount-status';
+      el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;'
+        + 'padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.5;'
+        + 'box-shadow:0 4px 14px rgba(0,0,0,.35);white-space:pre-wrap;word-break:break-all;cursor:pointer;';
+      el.addEventListener('click', () => el.remove());
+      document.body.appendChild(el);
+    }
+    el.style.background = isError ? '#ef4444' : '#374151';
+    el.style.color = '#fff';
+    el.textContent = `[岛主历险记·诊断] ${msg}（点一下关掉）`;
   } catch (_) { /* 连提示都放不上去就算了，不能再影响别的功能 */ }
 }
 const MAX_VISIBLE = 50; // 底部条最多渲染多少按钮，超出提示去「管理」
@@ -145,7 +152,10 @@ export function refreshPhoneBar() {
 
 // ---- 设置面板用：显示/隐藏整条 ----
 export function setPhoneBarVisible(visible) {
-  if (!phoneState) return;
+  if (!phoneState) {
+    reportMountStatus('设置面板的开关被点了，但插件内部还没初始化好（phoneState 是空的），这次点击没有生效——多半是加载顺序出了问题', true);
+    return;
+  }
   phoneState.showBar = !!visible;
   persist();
   if (visible) {
@@ -253,12 +263,18 @@ function persist() {
 export function attachPhoneBar(ctx, settings) {
   try {
     if (typeof document === 'undefined') return; // 非浏览器环境直接退出
-    if (document.getElementById(BAR_ID)) return; // 已挂载则跳过，防重复
+    if (document.getElementById(BAR_ID)) {
+      reportMountStatus('页面里已经有同 ID 的条了，本次跳过（防重复）');
+      return;
+    }
 
     phoneState = getPhoneState(settings);
     ctxRef = ctx;
     settingsRef = settings;
-    if (phoneState.showBar === false) return; // 配置关闭则默认不挂载（设置可恢复）
+    if (phoneState.showBar === false) {
+      reportMountStatus('设置里「显示小手机工坊模板条」当前是关闭状态，所以没有创建它——如果你已经勾选过，说明勾选没有真正生效');
+      return;
+    }
 
     // 构建横向条
     barEl = document.createElement('div');
@@ -297,8 +313,9 @@ export function attachPhoneBar(ctx, settings) {
     }
 
     console.log(`[${DISPLAY_NAME}] 小手机模板条已挂载（独立底条 + 三作用域聚合）。`);
+    reportMountStatus('已挂载成功，条应该出现在输入框上方（如果你看到这条提示但下面没有别的条，那就是挂载"成功"了但条本身不可见，多半是被别的东西挡住或样式没生效）', false);
   } catch (e) {
     console.error(`[${DISPLAY_NAME}] 挂载小手机模板条失败（已捕获，不影响其他功能）：`, e);
-    showMountError('小手机工坊挂载失败：' + (e && (e.message || String(e))));
+    reportMountStatus('挂载失败：' + (e && (e.message || String(e))), true);
   }
 }
