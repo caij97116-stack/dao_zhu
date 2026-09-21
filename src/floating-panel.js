@@ -164,42 +164,80 @@ function enableDrag(header) {
   header.addEventListener('pointercancel', end);
 }
 
-// 往原生按钮栏注入开关按钮（#leftSendForm 优先，降级 #rightSendForm，再降级浮动迷你钮）
+// 把开关塞进魔法棒（🪄 #extensionsMenu）菜单列表本体，而不是发送栏旁边——
+// 用户明确要求「必须在点开魔法棒之后那一长列里面」，不要出现在外面。
+// 挂法参考酒馆官方 Objective 扩展：优先找专属容器，没有就直接挂到 #extensionsMenu 本体，
+// 用它原生的 list-group-item + extensionsMenuExtensionButton 结构，样式完全原生。
+// 只有连 #extensionsMenu 都找不到（极老/魔改前端）才退回 pickToggleHost 的原生栏，
+// 再退无可退才是右下角浮动钮——保证任何版本下都至少有一个入口，不会彻底消失。
 function injectToggleButton() {
-  // M15-A：显式去重（兼容重载/多次调用），且绝不改写容器现有子节点或样式，
-  // 与同样注入输入区按钮栏的插件（如输入助手）和平共处
+  // M15-A：显式去重（兼容重载/多次调用），且绝不改写容器现有子节点或样式
   if (toggleEl || (typeof document !== 'undefined' && document.getElementById(TOGGLE_ID))) return;
-  const btn = document.createElement('button');
-  btn.id = TOGGLE_ID;
-  btn.type = 'button';
-  btn.className = 'dz-nav-toggle';
-  btn.title = '打开/关闭 岛民名册';
-  btn.textContent = '📒 名册';
-  btn.setAttribute('aria-pressed', navState.open ? 'true' : 'false');
-  if (navState.open) btn.classList.add('dz-nav-on');
 
   const onToggle = () => togglePanel();
-  btn.addEventListener('click', onToggle);
-  if (navState.showButton === false) btn.style.display = 'none'; // 配置关闭则默认隐藏（仍可经 setToggleButtonVisible 恢复）
 
   let mounted = false;
+  let btn = null;
+
+  // ① 首选：魔法棒菜单本体
   try {
-    // 原生栏优先：与 ☰ 汉堡菜单 / 🪄 魔法棒 等原生按钮并列（左侧），
-    // 个别版本/魔改前端没有左侧栏时降级到右侧，均用 appendChild 不破坏现有按钮。
-    const host = pickToggleHost(document);
-    if (host.el) {
-      host.el.appendChild(btn);
-      btn.dataset.host = host.sel;
+    const wandContainer =
+      document.getElementById('dz_wand_container') ||
+      document.getElementById('extensionsMenu');
+    if (wandContainer) {
+      btn = document.createElement('div');
+      btn.id = TOGGLE_ID;
+      btn.className = 'list-group-item flex-container flexGap5 dz-nav-toggle';
+      btn.title = '打开/关闭 岛民名册';
+      btn.tabIndex = 0;
+      btn.innerHTML = '<div class="extensionsMenuExtensionButton fa-solid fa-address-book"></div>岛民名册';
+      btn.setAttribute('aria-pressed', navState.open ? 'true' : 'false');
+      if (navState.open) btn.classList.add('dz-nav-on');
+      btn.addEventListener('click', onToggle);
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); }
+      });
+      wandContainer.appendChild(btn);
       mounted = true;
     }
   } catch (_) { /* 忽略，走降级 */ }
 
+  // ② 找不到魔法棒菜单才退回原生发送栏（老版本/魔改前端兼容）
   if (!mounted) {
-    // 降级：贴右下角的迷你浮动按钮
-    btn.classList.add('dz-nav-toggle-float');
-    btn.textContent = '📒';
+    try {
+      const host = pickToggleHost(document);
+      if (host.el) {
+        btn = document.createElement('button');
+        btn.id = TOGGLE_ID;
+        btn.type = 'button';
+        btn.className = 'dz-nav-toggle';
+        btn.title = '打开/关闭 岛民名册';
+        btn.textContent = '📒 名册';
+        btn.setAttribute('aria-pressed', navState.open ? 'true' : 'false');
+        if (navState.open) btn.classList.add('dz-nav-on');
+        btn.addEventListener('click', onToggle);
+        host.el.appendChild(btn);
+        btn.dataset.host = host.sel;
+        mounted = true;
+      }
+    } catch (_) { /* 忽略，走降级 */ }
+  }
+
+  // ③ 都拿不到：右下角迷你浮动钮
+  if (!mounted) {
+    btn = document.createElement('div');
+    btn.id = TOGGLE_ID;
+    btn.className = 'dz-nav-toggle dz-nav-toggle-float';
+    btn.title = '打开/关闭 岛民名册';
+    btn.tabIndex = 0;
+    btn.innerHTML = '<i class="fa-solid fa-address-book"></i>';
+    btn.setAttribute('aria-pressed', navState.open ? 'true' : 'false');
+    if (navState.open) btn.classList.add('dz-nav-on');
+    btn.addEventListener('click', onToggle);
     if (typeof document.body !== 'undefined') document.body.appendChild(btn);
   }
+
+  if (navState.showButton === false) btn.style.display = 'none'; // 配置关闭则默认隐藏（仍可经 setToggleButtonVisible 恢复）
   toggleEl = btn;
 }
 
