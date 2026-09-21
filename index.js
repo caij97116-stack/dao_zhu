@@ -27,7 +27,7 @@ import { renderRosterPane } from './src/navigator-roster.js';
 import { renderBeautifyPane } from './src/theme-adapt.js';
 import { renderCardAdaptPane } from './src/card-adapt.js';
 import { renderBindingPane } from './src/binding.js';
-import { attachPhoneBar } from './src/phone-scripts-bar.js';
+import { attachPhoneBar, setPhoneBarVisible } from './src/phone-scripts-bar.js';
 import { initPhoneEditor } from './src/phone-scripts-editor.js';
 import { initPhoneRunner } from './src/phone-scripts-runner.js';
 import { SKINS, DEFAULT_SKIN, normalizeSkin, applySkin } from './src/skin.js';
@@ -142,6 +142,9 @@ function buildSettingsHtml() {
     <label class="dz-row-set"><input type="checkbox" id="dz-nav-showbtn"> 在魔法棒（🪄）菜单里显示「岛民名册」入口（关闭后可在下方临时打开）</label>
     <button type="button" id="dz-nav-open" class="dz-btn">打开岛民名册悬浮窗</button>
 
+    <h4 class="dz-settings-sub">小手机工坊（M16+：聊天底部模板条）</h4>
+    <label class="dz-row-set"><input type="checkbox" id="dz-phone-showbar"> 在聊天底部显示小手机工坊模板条（如果之前被关掉过，这里能重新打开）</label>
+
     <h4 class="dz-settings-sub">抗弱模型 · 格式指令（复制到你的预设 / 角色卡）</h4>
     <p class="dz-hint">${escapeHtml(FORMAT_INSTRUCTION_HINT)}</p>
     <textarea id="dz-instruction" class="dz-instruction" readonly rows="16">${FORMAT_INSTRUCTION}</textarea>
@@ -196,6 +199,7 @@ function wireSettingsEvents(root, ctx, settings) {
   const navShow = root.querySelector('#dz-nav-showbtn');
   const navOpen = root.querySelector('#dz-nav-open');
   const skinSel = root.querySelector('#dz-card-skin');
+  const phoneShowBar = root.querySelector('#dz-phone-showbar');
 
   // 用已保存设置初始化勾选状态
   if (en) en.checked = settings.enabled !== false;
@@ -203,6 +207,7 @@ function wireSettingsEvents(root, ctx, settings) {
   if (ai) ai.checked = !!settings.allowIframe;
   if (navShow) navShow.checked = !(settings.navigator && settings.navigator.showButton === false);
   if (skinSel) skinSel.value = normalizeSkin(settings.cardSkin);
+  if (phoneShowBar) phoneShowBar.checked = !(settings.phoneScripts && settings.phoneScripts.showBar === false);
 
   if (en) en.addEventListener('change', () => {
     settings.enabled = en.checked;
@@ -235,6 +240,10 @@ function wireSettingsEvents(root, ctx, settings) {
     settings.cardSkin = normalizeSkin(skinSel.value);
     save();
     applySkin(settings.cardSkin);
+  });
+
+  if (phoneShowBar) phoneShowBar.addEventListener('change', () => {
+    setPhoneBarVisible(phoneShowBar.checked); // 内部会自己 persist，不需要再调用 save()
   });
 
   if (reBtn) reBtn.addEventListener('click', () => {
