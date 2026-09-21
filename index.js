@@ -30,6 +30,7 @@ import { renderBindingPane } from './src/binding.js';
 import { attachPhoneBar } from './src/phone-scripts-bar.js';
 import { initPhoneEditor } from './src/phone-scripts-editor.js';
 import { initPhoneRunner } from './src/phone-scripts-runner.js';
+import { SKINS, DEFAULT_SKIN, normalizeSkin, applySkin } from './src/skin.js';
 
 const MODULE_NAME = 'dao-zhu';
 const DISPLAY_NAME = '岛主历险记';
@@ -42,7 +43,7 @@ export const defaultSettings = Object.freeze({
   enabled: true,      // 是否启用自动美化
   allowHtml: false,   // 是否允许卡片内 html 富文本字段（需酒馆内置 DOMPurify，否则自动转义兜底）
   allowIframe: false, // 是否允许卡片内 iframe 字段（仅 http/https，沙箱隔离）
-  cardSkin: 'cinder', // 卡片/悬浮窗视觉皮肤：classic 经典 | cinder 暗色拼贴 | paper 跟随酒馆主题
+  cardSkin: DEFAULT_SKIN, // 卡片/悬浮窗视觉皮肤：见 src/skin.js 的 SKINS 定义（classic | cinder | paper）
   // —— 岛民名册悬浮窗（M9+）——
   navigator: {
     open: false,      // 悬浮窗是否默认展开
@@ -132,9 +133,7 @@ function buildSettingsHtml() {
     <label class="dz-row-set">
       视觉皮肤：
       <select id="dz-card-skin" class="dz-input">
-        <option value="classic">经典（原始配色）</option>
-        <option value="cinder">Cinder 暗色拼贴（推荐）</option>
-        <option value="paper">Paper 跟随酒馆当前主题</option>
+        ${Object.values(SKINS).map((s) => `<option value="${escapeHtml(s.id)}" title="${escapeHtml(s.hint)}">${escapeHtml(s.label)}</option>`).join('')}
       </select>
     </label>
     <p class="dz-hint">切换皮肤即时生效，无需重新美化或刷新。</p>
@@ -152,20 +151,6 @@ function buildSettingsHtml() {
 }
 
 // ---- 应用卡片/悬浮窗视觉皮肤：只切 <html> 上的类，纯 CSS 生效，不需要重渲染消息 ----
-function applyCardSkin(skin) {
-  try {
-    if (typeof document === 'undefined') return;
-    const root = document.documentElement;
-    root.classList.remove('dz-skin-collage', 'dz-skin-cinder', 'dz-skin-paper');
-    if (skin === 'cinder') {
-      root.classList.add('dz-skin-collage', 'dz-skin-cinder');
-    } else if (skin === 'paper') {
-      root.classList.add('dz-skin-collage', 'dz-skin-paper');
-    }
-    // skin === 'classic'（或其他未知值）：不加任何类，走文件顶部的经典配色
-  } catch (_) { /* 忽略，不影响美化主流程 */ }
-}
-
 // ---- 把设置面板挂到扩展设置容器（特性检测容器 ID，失败重试几次）----
 let panelMountRetries = 0;
 function mountSettingsPanel(ctx, settings) {
@@ -217,7 +202,7 @@ function wireSettingsEvents(root, ctx, settings) {
   if (ah) ah.checked = !!settings.allowHtml;
   if (ai) ai.checked = !!settings.allowIframe;
   if (navShow) navShow.checked = !(settings.navigator && settings.navigator.showButton === false);
-  if (skinSel) skinSel.value = settings.cardSkin || 'cinder';
+  if (skinSel) skinSel.value = normalizeSkin(settings.cardSkin);
 
   if (en) en.addEventListener('change', () => {
     settings.enabled = en.checked;
@@ -247,9 +232,9 @@ function wireSettingsEvents(root, ctx, settings) {
   });
 
   if (skinSel) skinSel.addEventListener('change', () => {
-    settings.cardSkin = skinSel.value;
+    settings.cardSkin = normalizeSkin(skinSel.value);
     save();
-    applyCardSkin(settings.cardSkin);
+    applySkin(settings.cardSkin);
   });
 
   if (reBtn) reBtn.addEventListener('click', () => {
@@ -273,7 +258,7 @@ function onReady(ctx) {
   console.log(`[${DISPLAY_NAME}] 初始化完成，挂载渲染管线与设置面板…`);
 
   // ===== M19：应用已保存的卡片/悬浮窗皮肤（要放在任何卡片渲染之前）=====
-  applyCardSkin(settings.cardSkin || 'cinder');
+  applySkin(settings.cardSkin);
 
   // ===== M2：增量渲染核心（MutationObserver + 防抖 + 去重 + 清理）=====
   attachIncrementalRenderer(ctx);
