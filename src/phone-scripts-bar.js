@@ -18,6 +18,23 @@ import { collectTemplates, filterTemplates, defaultPhoneScriptsState } from './p
 const DISPLAY_NAME = '岛主历险记';
 const BAR_ID = 'dz-phonebar';
 const HANDLE_ID = 'dz-phonebar-handle';
+
+// M21：排查用——挂载失败时，除了 console.error，再顶一条可点掉的红色提示条到页面上，
+// 这样反馈问题的人不需要会开控制台也能把报错原文截图发出来。
+function showMountError(msg) {
+  try {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('dz-mount-error')) return; // 已经提示过一次，别刷屏
+    const el = document.createElement('div');
+    el.id = 'dz-mount-error';
+    el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;'
+      + 'background:#ef4444;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;'
+      + 'line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.35);white-space:pre-wrap;word-break:break-all;';
+    el.textContent = `[${DISPLAY_NAME}] ${msg}（点一下这条提示可以关掉）`;
+    el.addEventListener('click', () => el.remove());
+    document.body.appendChild(el);
+  } catch (_) { /* 连提示都放不上去就算了，不能再影响别的功能 */ }
+}
 const MAX_VISIBLE = 50; // 底部条最多渲染多少按钮，超出提示去「管理」
 
 // ---- 模块级引用 ----
@@ -204,7 +221,17 @@ function applyBarPosition() {
     const sf = document.querySelector('#send_form');
     if (sf) sendTop = sf.getBoundingClientRect().top;
   } catch (_) { /* 忽略：无输入框容器 */ }
-  barEl.style.bottom = `${computeBarBottom(sendTop, window.innerHeight, safe)}px`;
+  let bottom = computeBarBottom(sendTop, window.innerHeight, safe);
+  // M21：加一层兜底——如果算出来的距离离谱（比如 #send_form 在这个前端里布局特殊，
+  // 拿到的坐标不对），条会被顶到屏幕外变得"看不见"。这里夹一个合理上限，
+  // 保证条至少落在可视区域内，不会因为一次坐标计算异常就整条消失。
+  const winH = (typeof window !== 'undefined' && Number.isFinite(window.innerHeight)) ? window.innerHeight : 0;
+  const maxSane = Math.max(0, winH - 40);
+  if (!Number.isFinite(bottom) || bottom < 0 || (winH > 0 && bottom > maxSane)) {
+    console.warn(`[${DISPLAY_NAME}] 底条定位算出异常值(${bottom})，已回退到默认位置，不影响其他功能。`);
+    bottom = 60;
+  }
+  barEl.style.bottom = `${bottom}px`;
 }
 
 function collapseBar() {
@@ -272,5 +299,6 @@ export function attachPhoneBar(ctx, settings) {
     console.log(`[${DISPLAY_NAME}] 小手机模板条已挂载（独立底条 + 三作用域聚合）。`);
   } catch (e) {
     console.error(`[${DISPLAY_NAME}] 挂载小手机模板条失败（已捕获，不影响其他功能）：`, e);
+    showMountError('小手机工坊挂载失败：' + (e && (e.message || String(e))));
   }
 }
