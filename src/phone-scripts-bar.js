@@ -223,6 +223,13 @@ function getComputedSafeInset() {
 }
 
 // ---- 内部：把条贴到输入框上方（不挡输入）----
+// M23：手机浏览器上，点一下输入框弹出系统键盘后，纯用 window.innerHeight /
+// getBoundingClientRect() 算出来的坐标基本都会失真——这是移动端一个很经典的坑：
+// 键盘弹出时"视觉视口(visualViewport)"会变矮，但"布局视口"很多时候不变，
+// 只用 window.innerHeight 算出来的东西会被认为"还在屏幕里"，其实早就被键盘挡住了，
+// 看起来就是"条消失了"。有 visualViewport 就优先用它，并且把 #send_form 的坐标
+// 也换算到视觉视口下（减掉 visualViewport.offsetTop），这样键盘弹出、地址栏收起
+// 之类的情况都能跟上。
 function applyBarPosition() {
   if (!barEl) return;
   const safe = getComputedSafeInset();
@@ -231,11 +238,17 @@ function applyBarPosition() {
     const sf = document.querySelector('#send_form');
     if (sf) sendTop = sf.getBoundingClientRect().top;
   } catch (_) { /* 忽略：无输入框容器 */ }
-  let bottom = computeBarBottom(sendTop, window.innerHeight, safe);
-  // M21：加一层兜底——如果算出来的距离离谱（比如 #send_form 在这个前端里布局特殊，
-  // 拿到的坐标不对），条会被顶到屏幕外变得"看不见"。这里夹一个合理上限，
-  // 保证条至少落在可视区域内，不会因为一次坐标计算异常就整条消失。
-  const winH = (typeof window !== 'undefined' && Number.isFinite(window.innerHeight)) ? window.innerHeight : 0;
+
+  const vv = (typeof window !== 'undefined') ? window.visualViewport : null;
+  const winH = vv && Number.isFinite(vv.height)
+    ? vv.height
+    : ((typeof window !== 'undefined' && Number.isFinite(window.innerHeight)) ? window.innerHeight : 0);
+  const offsetTop = (vv && Number.isFinite(vv.offsetTop)) ? vv.offsetTop : 0;
+  const effectiveSendTop = Number.isFinite(sendTop) ? (sendTop - offsetTop) : sendTop;
+
+  let bottom = computeBarBottom(effectiveSendTop, winH, safe);
+  // M21：加一层兜底——如果算出来的距离离谱，条会被顶到屏幕外变得"看不见"。
+  // 这里夹一个合理上限，保证条至少落在可视区域内，不会因为一次坐标计算异常就整条消失。
   const maxSane = Math.max(0, winH - 40);
   if (!Number.isFinite(bottom) || bottom < 0 || (winH > 0 && bottom > maxSane)) {
     console.warn(`[${DISPLAY_NAME}] 底条定位算出异常值(${bottom})，已回退到默认位置，不影响其他功能。`);
@@ -304,6 +317,12 @@ export function attachPhoneBar(ctx, settings) {
     // 视口变化重定位（输入框高度变化也跟得上）
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', applyBarPosition);
+      // M23：移动端键盘弹出/收起、地址栏隐藏这些不一定会触发 window 的 resize，
+      // 但一定会触发 visualViewport 自己的 resize/scroll，专门盯着它才跟得上。
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', applyBarPosition);
+        window.visualViewport.addEventListener('scroll', applyBarPosition);
+      }
     }
     // 切换聊天/角色后，模板来源变化 → 刷新条
     const eventSource = (ctx && ctx.eventSource) || globalThis.eventSource || null;
