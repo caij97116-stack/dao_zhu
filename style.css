@@ -280,10 +280,16 @@
   display: none;
 }
 
-/* 开关按钮：注入聊天输入框【原生按钮栏】（#leftSendForm 优先，与 ☰ / 🪄 并列）
-   刻意做成“原生观感”——默认沿用主题色描边，仅在激活(打开面板)时才点亮主题色，
-   避免在原生的 ☰ / 🪄 旁边出现一块突兀的实心蓝。 */
-.dz-nav-toggle {
+/* 开关按钮，三种挂载位置对应三套外观：
+   ① 挂进魔法棒菜单（.list-group-item）时，完全吃酒馆原生的 list-group-item /
+      extensionsMenuExtensionButton 样式，这里只补"已打开"时的高亮，不再额外描边；
+   ② 找不到魔法棒、退回原生发送栏时，做成"原生观感"的独立小按钮；
+   ③ 都找不到时，右下角迷你浮动钮。 */
+.dz-nav-toggle.list-group-item.dz-nav-on .extensionsMenuExtensionButton {
+  color: var(--dz-accent, #3b82f6);
+}
+
+.dz-nav-toggle:not(.list-group-item) {
   border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.45));
   background: transparent;
   color: var(--SmartThemeBodyTextColor, inherit);
@@ -294,16 +300,16 @@
   line-height: 1.2;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
-.dz-nav-toggle:hover {
+.dz-nav-toggle:not(.list-group-item):hover {
   border-color: var(--dz-accent, #3b82f6);
   color: var(--dz-accent, #3b82f6);
 }
-.dz-nav-toggle.dz-nav-on {
+.dz-nav-toggle.dz-nav-on:not(.list-group-item) {
   background: var(--dz-accent, #3b82f6);
   border-color: var(--dz-accent, #3b82f6);
   color: #fff;
 }
-/* 降级：原生按钮栏都拿不到时，贴右下角的迷你浮动钮 */
+/* 降级：魔法棒菜单和原生按钮栏都拿不到时，贴右下角的迷你浮动钮 */
 .dz-nav-toggle.dz-nav-toggle-float {
   position: fixed;
   right: 12px;
@@ -319,6 +325,9 @@
   border-color: var(--dz-accent, #3b82f6);
   color: #fff;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.dz-nav-toggle.dz-nav-toggle-float.dz-nav-on {
+  filter: brightness(1.15);
 }
 
 /* 移动端：面板收敛宽度，避免顶到边缘 */
@@ -1442,8 +1451,9 @@ html.dz-skin-collage .dz-nav-body .dz-btn:hover {
   background: var(--dz-hover-bg, rgba(127, 127, 127, 0.12));
   filter: none;
 }
-/* 原生按钮栏里的「📒 名册」钮：保持原生观感，只加一点点字距 */
-html.dz-skin-collage .dz-nav-toggle {
+/* 原生按钮栏里的「📒 名册」钮（找不到魔法棒时的退化款）：保持原生观感，只加一点点字距；
+   挂进魔法棒菜单的 .list-group-item 款完全吃原生样式，不需要这条 */
+html.dz-skin-collage .dz-nav-toggle:not(.list-group-item) {
   border-radius: 3px;
   letter-spacing: 0.08em;
 }
