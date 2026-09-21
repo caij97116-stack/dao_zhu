@@ -139,25 +139,30 @@
   font-family: monospace;
   font-size: 0.82em;
   line-height: 1.45;
-  background: rgba(0, 0, 0, 0.25);
-  color: #e6e6e6;
-  border: 1px solid #444;
+  background: var(--black30a, rgba(0, 0, 0, 0.15));
+  color: var(--SmartThemeBodyTextColor, #e6e6e6);
+  border: 1px solid var(--SmartThemeBorderColor, #444);
   border-radius: 6px;
   padding: 8px;
   resize: vertical;
 }
+/* M20：原为纯色蓝底按钮，跟酒馆原生极简描边按钮撞风格；改成跟 .dz-nav-toggle 一致的
+   「默认跟随主题、hover 才出强调色」，设置面板里一排按钮不再像是贴上去的异物 */
 .dz-btn {
   margin: 8px 8px 0 0;
   padding: 5px 12px;
-  border: 1px solid var(--dz-accent, #3b82f6);
-  background: var(--dz-accent, #3b82f6);
-  color: #fff;
+  border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.45));
+  background: transparent;
+  color: var(--SmartThemeBodyTextColor, inherit);
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9em;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .dz-btn:hover {
-  filter: brightness(1.1);
+  border-color: var(--dz-accent, #3b82f6);
+  color: var(--dz-accent, #3b82f6);
+  background: rgba(127, 127, 127, 0.1);
 }
 
 /* ===== 岛民名册悬浮窗（M9 骨架 + 视觉美化）===== */
@@ -1233,7 +1238,7 @@ html.dz-skin-collage .dz-notes {
   margin-top: 12px;
   padding: 8px 0 2px 14px;
   border-top: 1px solid var(--dz-ink-2, #4a5156);
-  border-left: 1px solid var(--dz-accent, #3b82f6);
+  border-left: 1px solid var(--dz-ink-3, #808a92);
   color: var(--dz-ink-3, #808a92);
   font-family: var(--dz-font-display, serif);
   font-style: italic;
@@ -1409,9 +1414,10 @@ html.dz-skin-collage .dz-phonebar-btn:hover {
   background: var(--dz-hover-bg, rgba(127, 127, 127, 0.12));
 }
 html.dz-skin-collage .dz-phonebar-manage {
-  background: var(--dz-accent, #3b82f6);
-  border-color: var(--dz-accent, #3b82f6);
-  color: #fff;
+  background: var(--dz-ink-2, #4a5156);
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.12));
+  border-color: var(--dz-ink-2, #4a5156);
+  color: var(--dz-ink-4, #bdc7ce);
 }
 html.dz-skin-collage .dz-phonebar-more {
   color: var(--dz-ink-3, #808a92);
