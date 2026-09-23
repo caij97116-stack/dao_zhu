@@ -52,6 +52,116 @@ function safeIframeSrc(url) {
   return null;
 }
 
+// ===== M25：关系图卡片（type=relations）=====
+// 独立的字段小语法：nodes=A,B,C  /  edges=A->B:关系,B->C:关系
+// 刻意跟主格式一样"多套兜底"——没写 nodes 也没事，edges 里出现过的名字会被自动收进节点；
+// 边里引用到没声明过的节点也不会报错，照样画得出来。
+const MAX_RELATION_NODES = 12; // 节点太多画不下，也防着弱模型瞎写一长串把卡片撑爆
+const EDGE_ARROW_RE = /^\s*(.+?)\s*->\s*(.+?)\s*(?::\s*(.*))?\s*$/; // 优先认箭头，指向明确
+const EDGE_DASH_RE = /^\s*(.+?)\s*-\s*(.+?)\s*(?::\s*(.*))?\s*$/;   // 退化：只写了短横线也认
+
+function parseRelationsFields(f) {
+  const names = [];
+  const nameSet = new Set();
+  const addName = (raw) => {
+    const name = String(raw == null ? '' : raw).trim();
+    if (!name) return null;
+    if (!nameSet.has(name)) { nameSet.add(name); names.push(name); }
+    return name;
+  };
+
+  if (f.nodes != null) {
+    String(f.nodes).split(/[,，、;；]/).forEach((s) => addName(s));
+  }
+
+  const edges = [];
+  if (f.edges != null) {
+    String(f.edges).split(/[,，;；]/).forEach((chunk) => {
+      const t = chunk.trim();
+      if (!t) return;
+      const m = EDGE_ARROW_RE.exec(t) || EDGE_DASH_RE.exec(t);
+      if (!m) return;
+      const from = addName(m[1]);
+      const to = addName(m[2]);
+      if (!from || !to || from === to) return; // 自环没法画，跳过
+      edges.push({ from, to, label: m[3] ? m[3].trim() : '' });
+    });
+  }
+
+  const truncated = names.length > MAX_RELATION_NODES;
+  return { names: names.slice(0, MAX_RELATION_NODES), edges, truncated };
+}
+
+// 关系图内容用「圆周均匀布局」——不需要力导向算法，节点一多就绕一圈，够用且稳定可预测
+let relCardCounter = 0;
+function buildRelationsBody(f) {
+  const { names, edges, truncated } = parseRelationsFields(f);
+
+  if (!names.length) {
+    // 没有可用节点：不硬画一张空图，退化成一行提示，保持"不留半成品"的一贯风格
+    return '<div class="dz-notes">（关系图数据为空或无法识别，请检查 nodes / edges 字段）</div>';
+  }
+
+  const cx = 160;
+  const cy = 160;
+  const r = names.length <= 1 ? 0 : 110;
+  const pos = names.map((_, i) => {
+    if (names.length === 1) return { x: cx, y: cy };
+    const angle = (Math.PI * 2 * i) / names.length - Math.PI / 2;
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  });
+  const idOf = new Map(names.map((n, i) => [n, i]));
+  const markerId = `dz-rel-arrow-${++relCardCounter}`;
+
+  let edgesSvg = '';
+  for (const e of edges) {
+    const i = idOf.get(e.from);
+    const j = idOf.get(e.to);
+    if (i == null || j == null) continue; // 极端兜底：理论上不会发生（above 已保证入 names）
+    const a = pos[i];
+    const b = pos[j];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const pad = 14; // 线两端各往里缩一点，别整根线插进节点圆点里
+    const x1 = a.x + (dx / len) * pad;
+    const y1 = a.y + (dy / len) * pad;
+    const x2 = b.x - (dx / len) * pad;
+    const y2 = b.y - (dy / len) * pad;
+    edgesSvg += `<line class="dz-rel-edge" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" `
+      + `x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" marker-end="url(#${markerId})"></line>`;
+    if (e.label) {
+      const mx = (x1 + x2) / 2;
+      const my = (y1 + y2) / 2;
+      const labelW = Math.min(140, Math.max(28, e.label.length * 10 + 8)); // 中文标签按近似方块字估宽度
+      edgesSvg += `<g transform="translate(${mx.toFixed(1)},${my.toFixed(1)})">`
+        + `<rect class="dz-rel-edge-label-bg" x="${(-labelW / 2).toFixed(1)}" y="-8" width="${labelW.toFixed(1)}" height="16" rx="4"></rect>`
+        + `<text class="dz-rel-edge-label" text-anchor="middle" dy="4">${escapeHtml(e.label)}</text>`
+        + `</g>`;
+    }
+  }
+
+  let nodesSvg = '';
+  names.forEach((name, i) => {
+    const p = pos[i];
+    nodesSvg += `<g class="dz-rel-node">`
+      + `<circle class="dz-rel-node-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="9"></circle>`
+      + `<text class="dz-rel-node-label" x="${p.x.toFixed(1)}" y="${(p.y + 22).toFixed(1)}" text-anchor="middle">${escapeHtml(name)}</text>`
+      + `</g>`;
+  });
+
+  const svg = `<svg class="dz-rel-graph" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">`
+    + `<defs><marker id="${markerId}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">`
+    + `<path class="dz-rel-arrowhead" d="M0,0 L10,5 L0,10 z"></path></marker></defs>`
+    + edgesSvg + nodesSvg
+    + `</svg>`;
+
+  const hint = truncated
+    ? `<div class="dz-hint">角色数量较多，只展示前 ${MAX_RELATION_NODES} 个</div>`
+    : '';
+  return `<div class="dz-relations">${svg}</div>${hint}`;
+}
+
 // 渲染单张卡片为安全 HTML
 function renderCardHtml(data, settings) {
   const f = data && data.fields ? data.fields : {};
@@ -60,9 +170,18 @@ function renderCardHtml(data, settings) {
   const accent = THEMES[themeKey];
   const title = f.title ? String(f.title) : '';
 
+  // M25：关系图卡片走独立分支——同一套外层卡片壳(标题/主题色)，body 换成 SVG 关系网
+  if (String(f.type || '').trim().toLowerCase() === 'relations') {
+    return `<div class="dz-card dz-theme-${escapeHtml(themeKey)} dz-card-relations" style="--dz-accent:${escapeHtml(accent)}">`
+      + `<div class="dz-title">${escapeHtml(title)}</div>`
+      + `<div class="dz-body">${buildRelationsBody(f)}</div>`
+      + `</div>`;
+  }
+
   let rows = '';
   for (const k of order) {
-    if (k === 'title' || k === 'theme' || k === '__notes' || k === 'iframe' || k === 'html') continue;
+    if (k === 'title' || k === 'theme' || k === 'type' || k === 'nodes' || k === 'edges'
+      || k === '__notes' || k === 'iframe' || k === 'html') continue;
     const val = f[k];
     const v = Array.isArray(val) ? val.join(' ') : String(val);
     rows += `<div class="dz-row"><span class="dz-k">${escapeHtml(k)}</span><span class="dz-v">${escapeHtml(v)}</span></div>`;
