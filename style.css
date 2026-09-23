@@ -64,6 +64,44 @@
   background: #fff;
 }
 
+/* ===== M25：关系图卡片（type=relations）===== */
+.dz-relations {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+.dz-rel-graph {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+.dz-rel-edge {
+  stroke: var(--dz-accent, #3b82f6);
+  stroke-width: 1.6;
+  opacity: 0.75;
+}
+.dz-rel-arrowhead {
+  fill: var(--dz-accent, #3b82f6);
+  opacity: 0.75;
+}
+.dz-rel-edge-label-bg {
+  fill: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.55));
+}
+.dz-rel-edge-label {
+  fill: var(--SmartThemeBodyTextColor, #eee);
+  font-size: 9px;
+}
+.dz-rel-node-dot {
+  fill: var(--dz-accent, #3b82f6);
+  stroke: var(--SmartThemeBodyColor, #fff);
+  stroke-width: 1.5;
+}
+.dz-rel-node-label {
+  fill: var(--SmartThemeBodyTextColor, #eee);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 /* 单卡渲染失败降级：以原始文本（转义）呈现，不显示半成品 */
 .dz-error {
   white-space: pre-wrap;
@@ -1246,6 +1284,31 @@ html.dz-skin-collage .dz-card.dz-error {
 html.dz-skin-collage .dz-card.dz-error .dz-title {
   color: #ef4444;
   border-bottom-color: rgba(239, 68, 68, 0.45);
+}
+
+/* 关系图卡片：拼贴皮肤下也收窄成墨色系，不跟着 AI 给的 6 色主题走 */
+html.dz-skin-collage .dz-rel-edge {
+  stroke: var(--dz-ink-3, #808a92);
+  opacity: 0.7;
+}
+html.dz-skin-collage .dz-rel-arrowhead {
+  fill: var(--dz-ink-3, #808a92);
+  opacity: 0.7;
+}
+html.dz-skin-collage .dz-rel-edge-label-bg {
+  fill: var(--dz-ink-1, #24292e);
+  opacity: 0.92;
+}
+html.dz-skin-collage .dz-rel-edge-label {
+  fill: var(--dz-ink-4, #bdc7ce);
+}
+html.dz-skin-collage .dz-rel-node-dot {
+  fill: var(--dz-ink-2, #4a5156);
+  stroke: var(--dz-ink-4, #bdc7ce);
+}
+html.dz-skin-collage .dz-rel-node-label {
+  fill: var(--dz-ink-4, #bdc7ce);
+  font-family: 'Cormorant Garamond', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', 'STSong', Georgia, serif;
 }
 
 /* ===== 岛民名册悬浮窗：墨色纸面 + 噪点 ===== */
