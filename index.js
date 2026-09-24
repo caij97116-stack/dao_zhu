@@ -28,6 +28,7 @@ import { renderBeautifyPane } from './src/theme-adapt.js';
 import { renderCardAdaptPane } from './src/card-adapt.js';
 import { renderBindingPane } from './src/binding.js';
 import { attachPhoneBar, setPhoneBarVisible } from './src/phone-scripts-bar.js';
+import { openStoryDigest } from './src/story-digest.js';
 import { initPhoneEditor } from './src/phone-scripts-editor.js';
 import { initPhoneRunner } from './src/phone-scripts-runner.js';
 import { SKINS, DEFAULT_SKIN, normalizeSkin, applySkin } from './src/skin.js';
@@ -145,6 +146,9 @@ function buildSettingsHtml() {
     <h4 class="dz-settings-sub">小手机工坊（M16+：聊天底部模板条）</h4>
     <label class="dz-row-set"><input type="checkbox" id="dz-phone-showbar"> 在聊天底部显示小手机工坊模板条（如果之前被关掉过，这里能重新打开）</label>
 
+    <h4 class="dz-settings-sub">故事摘要页（M26：把整段聊天里的卡片汇总成一页）</h4>
+    <button type="button" id="dz-digest-open" class="dz-btn">打开故事摘要页</button>
+
     <h4 class="dz-settings-sub">抗弱模型 · 格式指令（复制到你的预设 / 角色卡）</h4>
     <p class="dz-hint">${escapeHtml(FORMAT_INSTRUCTION_HINT)}</p>
     <textarea id="dz-instruction" class="dz-instruction" readonly rows="16">${FORMAT_INSTRUCTION}</textarea>
@@ -198,6 +202,7 @@ function wireSettingsEvents(root, ctx, settings) {
   const copyBtn = root.querySelector('#dz-copy-instruction');
   const navShow = root.querySelector('#dz-nav-showbtn');
   const navOpen = root.querySelector('#dz-nav-open');
+  const digestOpen = root.querySelector('#dz-digest-open');
   const skinSel = root.querySelector('#dz-card-skin');
   const phoneShowBar = root.querySelector('#dz-phone-showbar');
 
@@ -234,6 +239,9 @@ function wireSettingsEvents(root, ctx, settings) {
   });
   if (navOpen) navOpen.addEventListener('click', () => {
     try { togglePanel(true); } catch (_) {}
+  });
+  if (digestOpen) digestOpen.addEventListener('click', () => {
+    try { openStoryDigest(ctx, settings); } catch (_) {}
   });
 
   if (skinSel) skinSel.addEventListener('change', () => {
