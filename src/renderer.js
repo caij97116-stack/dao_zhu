@@ -163,7 +163,7 @@ function buildRelationsBody(f) {
 }
 
 // 渲染单张卡片为安全 HTML
-function renderCardHtml(data, settings) {
+export function renderCardHtml(data, settings) {
   const f = data && data.fields ? data.fields : {};
   const order = data && Array.isArray(data.order) ? data.order : Object.keys(f);
   const themeKey = THEMES[f.theme] ? String(f.theme) : DEFAULT_THEME;
